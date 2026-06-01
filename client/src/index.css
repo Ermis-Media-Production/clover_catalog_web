@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -40,45 +39,69 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "Inter", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  /* Brand fonts */
+  --font-sans: "Lato", sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-heading: "Oswald", sans-serif;
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  /* Dark theme — Clover-inspired green accent on deep slate */
-  --background: oklch(0.13 0.01 240);
-  --foreground: oklch(0.95 0.005 240);
-  --card: oklch(0.17 0.012 240);
-  --card-foreground: oklch(0.95 0.005 240);
-  --popover: oklch(0.17 0.012 240);
-  --popover-foreground: oklch(0.95 0.005 240);
-  --primary: oklch(0.65 0.18 145);
-  --primary-foreground: oklch(0.1 0.02 145);
-  --secondary: oklch(0.22 0.015 240);
-  --secondary-foreground: oklch(0.9 0.005 240);
-  --muted: oklch(0.22 0.015 240);
-  --muted-foreground: oklch(0.6 0.01 240);
-  --accent: oklch(0.22 0.015 240);
-  --accent-foreground: oklch(0.9 0.005 240);
-  --destructive: oklch(0.6 0.22 25);
-  --border: oklch(0.25 0.015 240);
-  --input: oklch(0.22 0.015 240);
-  --ring: oklch(0.65 0.18 145);
-  --chart-1: oklch(0.65 0.18 145);
-  --chart-2: oklch(0.6 0.15 200);
-  --chart-3: oklch(0.7 0.15 60);
-  --chart-4: oklch(0.65 0.18 300);
-  --chart-5: oklch(0.6 0.2 25);
-  --sidebar: oklch(0.15 0.012 240);
-  --sidebar-foreground: oklch(0.95 0.005 240);
-  --sidebar-primary: oklch(0.65 0.18 145);
-  --sidebar-primary-foreground: oklch(0.1 0.02 145);
-  --sidebar-accent: oklch(0.2 0.015 240);
-  --sidebar-accent-foreground: oklch(0.9 0.005 240);
-  --sidebar-border: oklch(0.22 0.015 240);
-  --sidebar-ring: oklch(0.65 0.18 145);
+  /* ── Casa de Pizza & Wings brand theme ──────────────────────────────────
+     Forest green  #2d5a1e  (logo house, "PIZZA & WINGS")
+     Deep red      #c41e1e  (logo flames, "Casa de" script)
+     Warm cream    #f7f2e8  (old site background)
+     Dark charcoal #1c1c1c  (body text)
+     Gold/amber    #d4a017  (pizza crust accent)
+  ──────────────────────────────────────────────────────────────────────── */
+
+  /* Light / warm cream background */
+  --background: oklch(0.97 0.015 85);          /* warm cream #f7f2e8 */
+  --foreground: oklch(0.15 0.01 85);           /* dark charcoal #1c1c1c */
+
+  --card: oklch(0.99 0.008 85);               /* near-white card */
+  --card-foreground: oklch(0.15 0.01 85);
+
+  --popover: oklch(0.99 0.008 85);
+  --popover-foreground: oklch(0.15 0.01 85);
+
+  /* Primary = forest green */
+  --primary: oklch(0.38 0.12 140);            /* #2d5a1e forest green */
+  --primary-foreground: oklch(0.97 0.01 85);  /* cream on green */
+
+  /* Secondary = muted warm gray */
+  --secondary: oklch(0.92 0.01 85);
+  --secondary-foreground: oklch(0.25 0.01 85);
+
+  --muted: oklch(0.92 0.01 85);
+  --muted-foreground: oklch(0.5 0.01 85);
+
+  /* Accent = deep red */
+  --accent: oklch(0.42 0.2 25);              /* #c41e1e deep red */
+  --accent-foreground: oklch(0.97 0.01 85);  /* cream on red */
+
+  --destructive: oklch(0.55 0.22 25);
+
+  --border: oklch(0.85 0.015 85);
+  --input: oklch(0.92 0.01 85);
+  --ring: oklch(0.38 0.12 140);
+
+  --chart-1: oklch(0.38 0.12 140);  /* green */
+  --chart-2: oklch(0.42 0.2 25);   /* red */
+  --chart-3: oklch(0.65 0.15 60);  /* gold */
+  --chart-4: oklch(0.55 0.12 200);
+  --chart-5: oklch(0.6 0.18 300);
+
+  /* Sidebar — dark green (like the top bar on old site) */
+  --sidebar: oklch(0.22 0.08 140);
+  --sidebar-foreground: oklch(0.95 0.01 85);
+  --sidebar-primary: oklch(0.65 0.15 60);     /* gold accent in sidebar */
+  --sidebar-primary-foreground: oklch(0.15 0.01 85);
+  --sidebar-accent: oklch(0.3 0.1 140);
+  --sidebar-accent-foreground: oklch(0.95 0.01 85);
+  --sidebar-border: oklch(0.3 0.08 140);
+  --sidebar-ring: oklch(0.65 0.15 60);
 }
 
 @layer base {
@@ -101,5 +124,27 @@
   .flex {
     min-width: 0;
     min-height: 0;
+  }
+  /* Brand utility classes */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .text-brand-green {
+    color: oklch(0.38 0.12 140);
+  }
+  .text-brand-red {
+    color: oklch(0.42 0.2 25);
+  }
+  .text-brand-gold {
+    color: oklch(0.65 0.15 60);
+  }
+  .bg-brand-green {
+    background-color: oklch(0.38 0.12 140);
+  }
+  .bg-brand-red {
+    background-color: oklch(0.42 0.2 25);
+  }
+  .bg-brand-dark {
+    background-color: oklch(0.18 0.06 140);
   }
 }

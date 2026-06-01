@@ -144,3 +144,12 @@
 - [x] Send POST /orders/{id}/payments to mark order as paid externally (after print)
 - [x] Add CLOVER_PRINTER_DEVICE_ID and CLOVER_PAYMENT_TENDER_ID env secrets
 - [x] 10 Vitest tests covering atomic flow, print order, payment, error handling
+
+## Brand Redesign (Landing Page + Menu Page)
+
+- [x] Upload Casa de Pizza & Wings logo to static assets
+- [x] Update global CSS theme: forest green (#2d5a1e) primary, deep red (#c41e1e) accent, warm cream (#f7f2e8) background
+- [x] Add Playfair Display, Oswald, and Lato fonts from Google Fonts
+- [x] Redesign LandingPage: top bar, branded nav with logo, hero with food photo, stats bar, 16-category grid, lunch specials callout, hours/location section, footer
+- [x] Redesign MenuPage: branded nav with logo, dark green sidebar, category sort order matching restaurant categories, branded item cards with green/red accents
+- [x] All 39 tests still passing after redesign

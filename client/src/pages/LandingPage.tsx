@@ -1,8 +1,9 @@
 import { Link } from "wouter";
 import { useCart } from "@/contexts/CartContext";
-import { ShoppingCart, MapPin, Clock, Phone, ChevronRight, Star, Flame, Pizza } from "lucide-react";
+import { ShoppingCart, MapPin, Clock, Phone, ChevronRight, Star, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
+const LOGO_URL = "/manus-storage/casa_pizza_logo_a63e4fc6.jpg";
 
 const HERO_IMAGE =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663720514377/ejCzvr6KZgeQPg5quv8Pa2/hero_pizza_wings-kzMmbtFr4p4MhqzWSb6X7g.webp";
@@ -19,252 +20,407 @@ const HOURS = [
 
 function getTodayStatus() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon ... 6=Sat
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const current = hour * 60 + minute;
-
-  // Open/close times in minutes from midnight — 10:00 AM to 10:00 PM every day
-  const schedule: Record<number, { open: number; close: number }> = {
-    0: { open: 10 * 60, close: 22 * 60 },       // Sun
-    1: { open: 10 * 60, close: 22 * 60 },       // Mon
-    2: { open: 10 * 60, close: 22 * 60 },
-    3: { open: 10 * 60, close: 22 * 60 },
-    4: { open: 10 * 60, close: 22 * 60 },
-    5: { open: 10 * 60, close: 22 * 60 },       // Fri
-    6: { open: 10 * 60, close: 22 * 60 },       // Sat
-  };
-
-  const today = schedule[day];
-  if (!today) return { open: false, label: "Closed today" };
-
-  if (current >= today.open && current < today.close) {
-    const closeHour = Math.floor(today.close / 60);
-    const closeMin = today.close % 60;
-    const closeStr = `${closeHour > 12 ? closeHour - 12 : closeHour}:${closeMin.toString().padStart(2, "0")} ${closeHour >= 12 ? "PM" : "AM"}`;
-    return { open: true, label: `Open now · Closes at ${closeStr}` };
+  const day = now.getDay();
+  const current = now.getHours() * 60 + now.getMinutes();
+  const open = 10 * 60;
+  const close = 22 * 60;
+  if (current >= open && current < close) {
+    return { open: true, label: "Open Now · Closes at 10:00 PM" };
   }
-  if (current < today.open) {
-    const openHour = Math.floor(today.open / 60);
-    const openStr = `${openHour > 12 ? openHour - 12 : openHour}:00 ${openHour >= 12 ? "PM" : "AM"}`;
-    return { open: false, label: `Opens at ${openStr}` };
-  }
+  if (current < open) return { open: false, label: "Opens at 10:00 AM" };
   return { open: false, label: "Closed for today" };
 }
 
-const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TODAY_NAME = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
+
+const CATEGORIES = [
+  { id: "appetizers", num: "01", name: "Appetizers", desc: "Garlic bread, mozzarella sticks & daily specials" },
+  { id: "soups", num: "02", name: "Soups", desc: "Warm, hearty soups made fresh daily" },
+  { id: "house-salads", num: "03", name: "House Salads", desc: "Fresh salads with house dressings" },
+  { id: "specialty-pizzas", num: "04", name: "Specialty Pizzas", desc: "Bold toppings, house sauce, baked to perfection" },
+  { id: "wings-fingers", num: "05", name: "Wings & Fingers", desc: "Buffalo, BBQ, honey garlic and more" },
+  { id: "stromboli-calzone", num: "06", name: "Stromboli & Calzone", desc: "Golden baked Italian rolled favorites" },
+  { id: "italian-dinners", num: "07", name: "Italian Dinners", desc: "Lasagna, parmigiana, spaghetti & classics" },
+  { id: "ribs", num: "08", name: "Ribs", desc: "Slow-cooked, fall-off-the-bone BBQ ribs" },
+  { id: "gyro", num: "09", name: "Gyro", desc: "Seasoned meat, tzatziki & fresh veggies in pita" },
+  { id: "angus-burgers", num: "10", name: "100% Angus Burgers", desc: "Premium patties, juicy & stacked with fries" },
+  { id: "hot-sandwiches", num: "11", name: "Hot Sandwiches", desc: "Melted cheese & generous fillings on toasted bread" },
+  { id: "cold-sandwiches", num: "12", name: "Cold Sandwiches", desc: "Premium deli meats & fresh veggies" },
+  { id: "desserts", num: "13", name: "Desserts", desc: "Cannoli, tiramisu & sweet endings" },
+  { id: "drinks", num: "14", name: "Drinks", desc: "Sodas, juices & refreshing beverages" },
+  { id: "lunch-specials", num: "15", name: "Lunch Specials", desc: "Daily deals available 10AM–3PM" },
+  { id: "combo-specials", num: "16", name: "Combo Specials", desc: "Pizza, wings, sides & drinks bundled" },
+];
 
 export default function LandingPage() {
   const { totalItems, openCart } = useCart();
   const status = getTodayStatus();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* ── NAV ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <Pizza className="w-4 h-4 text-primary-foreground" />
+    <div className="min-h-screen" style={{ backgroundColor: "#f7f2e8", color: "#1c1c1c" }}>
+
+      {/* ── Top announcement bar ─────────────────────────────────────────── */}
+      <div
+        className="w-full text-center text-sm font-heading tracking-wider py-2 px-4 flex items-center justify-center gap-6"
+        style={{ backgroundColor: "#1a3d0f", color: "#f7f2e8" }}
+      >
+        <span>🍕 OPEN MON – SUN 10AM–10PM</span>
+        <a
+          href="tel:+17022005252"
+          className="font-bold hover:underline"
+          style={{ color: "#f5c842" }}
+        >
+          CALL: (702) 200-5252
+        </a>
+      </div>
+
+      {/* ── Navigation ──────────────────────────────────────────────────── */}
+      <nav
+        className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 shadow-md"
+        style={{ backgroundColor: "#ffffff", borderBottom: "3px solid #2d5a1e" }}
+      >
+        <Link href="/" className="flex items-center gap-3">
+          <img src={LOGO_URL} alt="Casa de Pizza & Wings" className="h-12 w-12 object-contain rounded-full" />
+          <div className="hidden sm:block">
+            <div className="font-display italic font-bold text-lg leading-tight" style={{ color: "#c41e1e" }}>
+              Casa de
+            </div>
+            <div className="font-heading font-bold text-sm tracking-widest leading-tight" style={{ color: "#2d5a1e" }}>
+              PIZZA & WINGS
+            </div>
           </div>
-          <span className="font-display font-bold text-lg text-foreground">Casa de Pizza & Wings</span>
         </Link>
+
+        <div className="hidden md:flex items-center gap-8">
+          {[
+            { label: "MENU", href: "/menu" },
+            { label: "CONTACT", href: "#contact" },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="font-heading font-semibold text-sm tracking-widest hover:underline transition-colors"
+              style={{ color: "#2d5a1e" }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+
         <div className="flex items-center gap-3">
-          <Link href="/menu">
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              Menu
-            </Button>
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="relative"
+          <button
             onClick={openCart}
+            className="relative p-2 rounded-full transition-colors hover:bg-gray-100"
+            aria-label="Cart"
           >
-            <ShoppingCart className="w-4 h-4" />
+            <ShoppingCart className="w-5 h-5" style={{ color: "#2d5a1e" }} />
             {totalItems > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+              <span
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                style={{ backgroundColor: "#c41e1e" }}
+              >
                 {totalItems}
               </span>
             )}
-          </Button>
+          </button>
+          <Link href="/menu">
+            <button
+              className="font-heading font-bold text-sm tracking-wider px-5 py-2 rounded text-white transition-all active:scale-95"
+              style={{ backgroundColor: "#c41e1e" }}
+            >
+              ORDER NOW
+            </button>
+          </Link>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background image */}
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Background photo */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${HERO_IMAGE})` }}
         />
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(10,20,5,0.85) 45%, rgba(10,20,5,0.3) 100%)" }} />
 
-        {/* Hero content */}
-        <div className="relative z-10 text-center px-6 max-w-3xl mx-auto pt-20">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Badge
-              className="px-3 py-1 text-sm font-medium"
-              style={{
-                background: status.open
-                  ? "oklch(0.65 0.18 145 / 0.2)"
-                  : "oklch(0.6 0.22 25 / 0.2)",
-                color: status.open ? "oklch(0.75 0.18 145)" : "oklch(0.75 0.22 25)",
-                border: `1px solid ${status.open ? "oklch(0.65 0.18 145 / 0.4)" : "oklch(0.6 0.22 25 / 0.4)"}`,
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full mr-2 inline-block"
-                style={{ background: status.open ? "oklch(0.65 0.18 145)" : "oklch(0.6 0.22 25)" }}
-              />
-              {status.label}
-            </Badge>
+        {/* Content */}
+        <div className="relative z-10 px-8 md:px-16 max-w-2xl">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-heading font-semibold tracking-widest mb-6"
+            style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+          >
+            <Star className="w-3 h-3 fill-current" style={{ color: "#f5c842" }} />
+            LAS VEGAS FAVORITE SINCE 2008
           </div>
 
-          <h1 className="font-display text-5xl sm:text-7xl font-bold text-white leading-tight mb-4">
-            Casa de<br />
-            <span className="text-primary">Pizza & Wings</span>
+          {/* Address */}
+          <div className="flex items-center gap-2 mb-4 text-sm" style={{ color: "#f5c842" }}>
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <span className="font-heading tracking-wider">765 N NELLIS BLVD, LAS VEGAS, NV</span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="font-display leading-none mb-2">
+            <span className="block text-6xl md:text-7xl font-bold" style={{ color: "#f7f2e8" }}>
+              Casa De
+            </span>
+            <span className="block text-6xl md:text-7xl font-bold italic" style={{ color: "#c41e1e" }}>
+              Pizza
+            </span>
+            <span className="block text-4xl md:text-5xl font-bold" style={{ color: "#f7f2e8" }}>
+              &amp; Wings
+            </span>
           </h1>
 
-          <p className="text-white/80 text-lg sm:text-xl mb-10 max-w-xl mx-auto leading-relaxed">
-            Authentic wood-fired pizzas, crispy wings, and handmade strombolis — crafted fresh for every order.
+          <p className="mt-4 mb-8 text-base md:text-lg leading-relaxed" style={{ color: "rgba(247,242,232,0.85)" }}>
+            Specialty pizzas, crispy wings, Angus burgers, Italian dinners and so much more —
+            all made fresh, every single day.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Status badge */}
+          <div className="flex items-center gap-2 mb-6">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full animate-pulse"
+              style={{ backgroundColor: status.open ? "#4ade80" : "#f87171" }}
+            />
+            <span className="text-sm font-semibold" style={{ color: status.open ? "#4ade80" : "#f87171" }}>
+              {status.label}
+            </span>
+          </div>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-4">
             <Link href="/menu">
-              <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 font-semibold shadow-lg shadow-primary/30">
-                Order Now
-                <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
+              <button
+                className="font-heading font-bold tracking-wider px-8 py-3 rounded text-white text-sm transition-all active:scale-95 flex items-center gap-2"
+                style={{ backgroundColor: "#c41e1e" }}
+              >
+                VIEW FULL MENU
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </Link>
-            <a href="#info">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 py-6 font-semibold bg-white/10 border-white/30 text-white hover:bg-white/20">
-                Hours & Location
-              </Button>
+            <a
+              href="tel:+17022005252"
+              className="font-heading font-bold tracking-wider px-8 py-3 rounded text-sm transition-all active:scale-95 flex items-center gap-2"
+              style={{ border: "2px solid #f7f2e8", color: "#f7f2e8", backgroundColor: "transparent" }}
+            >
+              <Phone className="w-4 h-4" />
+              CALL &amp; ORDER
             </a>
           </div>
         </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/40 text-xs animate-bounce">
-          <span>Scroll</span>
-          <ChevronRight className="w-4 h-4 rotate-90" />
-        </div>
       </section>
 
-      {/* ── HIGHLIGHTS ── */}
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {/* ── Stats bar ───────────────────────────────────────────────────── */}
+      <div style={{ backgroundColor: "#2d5a1e" }}>
+        <div className="container py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            {
-              icon: <Pizza className="w-7 h-7 text-primary" />,
-              title: "Wood-Fired Pizzas",
-              desc: "Authentic dough, house-made sauce, and premium toppings baked to perfection.",
-            },
-            {
-              icon: <Flame className="w-7 h-7 text-orange-400" />,
-              title: "Crispy Wings",
-              desc: "Buffalo, BBQ, garlic parmesan — choose your flavor, choose your heat.",
-            },
-            {
-              icon: <Star className="w-7 h-7 text-yellow-400" />,
-              title: "Strombolis & Calzones",
-              desc: "Stuffed with your favorite fillings, folded and baked golden every time.",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-border bg-card p-6 flex flex-col gap-3 hover:border-primary/40 transition-colors"
-            >
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                {f.icon}
+            { value: "16+", label: "Categories" },
+            { value: "7", label: "Days/Week" },
+            { value: "100%", label: "Fresh Daily" },
+            { value: "4.8★", label: "Rated" },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="font-heading text-3xl font-bold" style={{ color: "#f5c842" }}>
+                {stat.value}
               </div>
-              <h3 className="font-display font-semibold text-lg text-foreground">{f.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
+              <div className="text-sm font-semibold tracking-wider mt-1" style={{ color: "rgba(247,242,232,0.8)" }}>
+                {stat.label.toUpperCase()}
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* ── HOURS & ADDRESS ── */}
-      <section id="info" className="py-16 px-6 bg-card/50">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
-          {/* Hours */}
-          <div>
-            <div className="flex items-center gap-2 mb-6">
-              <Clock className="w-5 h-5 text-primary" />
-              <h2 className="font-display text-2xl font-bold text-foreground">Hours</h2>
-            </div>
-            <div className="space-y-2">
-              {HOURS.map(({ day, hours }) => {
-                const isToday = day === TODAY_NAME;
-                return (
-                  <div
-                    key={day}
-                    className={`flex items-center justify-between py-2.5 px-4 rounded-lg transition-colors ${
-                      isToday
-                        ? "bg-primary/10 border border-primary/30"
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <span
-                      className={`font-medium text-sm ${
-                        isToday ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {day}
-                      {isToday && (
-                        <span className="ml-2 text-xs font-normal text-primary/70">Today</span>
-                      )}
-                    </span>
-                    <span
-                      className={`text-sm ${
-                        isToday ? "text-primary font-semibold" : "text-muted-foreground"
-                      }`}
-                    >
-                      {hours}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+      {/* ── Categories section ──────────────────────────────────────────── */}
+      <section className="py-16" style={{ backgroundColor: "#f7f2e8" }}>
+        <div className="container">
+          {/* Section header */}
+          <div className="text-center mb-12">
+            <span
+              className="inline-block font-heading text-xs font-bold tracking-[0.2em] px-4 py-1.5 rounded-full mb-4"
+              style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+            >
+              EXPLORE OUR MENU
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl font-bold" style={{ color: "#1c1c1c" }}>
+              Our <span className="italic" style={{ color: "#c41e1e" }}>Categories</span>
+            </h2>
+            <div className="w-16 h-1 mx-auto mt-4 rounded" style={{ backgroundColor: "#2d5a1e" }} />
+            <p className="mt-4 text-base max-w-xl mx-auto" style={{ color: "#555" }}>
+              From our legendary Specialty Casa Pizza to crispy wings, hearty burgers and
+              classic Italian favorites — there's something for everyone.
+            </p>
           </div>
 
-          {/* Address & Contact */}
-          <div className="flex flex-col gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <MapPin className="w-5 h-5 text-primary" />
-                <h2 className="font-display text-2xl font-bold text-foreground">Location</h2>
-              </div>
-              <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-                <div>
-                  <p className="text-foreground font-semibold text-base leading-snug">
-                    Casa de Pizza & Wings
-                  </p>
-                  <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
-                    765 N Nellis Blvd, Suite 10<br />
-                    Las Vegas, NV 89110
-                  </p>
+          {/* Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {CATEGORIES.map((cat) => (
+              <Link key={cat.id} href={`/menu?category=${cat.id}`}>
+                <div
+                  className="group relative rounded-xl overflow-hidden border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
+                  style={{ borderColor: "#e8e0d0", backgroundColor: "#ffffff" }}
+                >
+                  {/* Number badge */}
+                  <div
+                    className="absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-heading font-bold z-10"
+                    style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+                  >
+                    {cat.num}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 pt-10">
+                    <h3
+                      className="font-heading font-bold text-sm tracking-wide leading-tight mb-1 group-hover:underline"
+                      style={{ color: "#1c1c1c" }}
+                    >
+                      {cat.name.toUpperCase()}
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: "#777" }}>
+                      {cat.desc}
+                    </p>
+                  </div>
+
+                  {/* Bottom accent bar */}
+                  <div
+                    className="h-1 w-0 group-hover:w-full transition-all duration-300"
+                    style={{ backgroundColor: "#c41e1e" }}
+                  />
                 </div>
-                <a
-                  href="https://www.google.com/maps/dir/?api=1&destination=765+N+Nellis+Blvd+Suite+10+Las+Vegas+NV+89110"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-primary text-sm hover:underline"
-                >
-                  <MapPin className="w-4 h-4 flex-shrink-0" />
-                  <span>Get Directions on Google Maps</span>
-                </a>
-                <a
-                  href="tel:+17022005252"
-                  className="flex items-center gap-2 text-primary text-sm hover:underline"
-                >
-                  <Phone className="w-4 h-4 flex-shrink-0" />
-                  <span>(702) 200-5252</span>
-                </a>
-                <div className="w-full h-44 rounded-xl overflow-hidden border border-border">
+              </Link>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/menu">
+              <button
+                className="font-heading font-bold tracking-wider px-10 py-3 rounded text-white text-sm transition-all active:scale-95 inline-flex items-center gap-2"
+                style={{ backgroundColor: "#c41e1e" }}
+              >
+                VIEW FULL MENU &amp; PRICES
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Lunch specials callout ───────────────────────────────────────── */}
+      <section
+        className="py-14"
+        style={{ backgroundColor: "#1a3d0f" }}
+      >
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Flame className="w-5 h-5" style={{ color: "#f5c842" }} />
+              <span className="font-heading text-xs font-bold tracking-[0.2em]" style={{ color: "#f5c842" }}>
+                DAILY DEALS
+              </span>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-bold" style={{ color: "#f7f2e8" }}>
+              Lunch Specials
+            </h2>
+            <p className="mt-2 text-base" style={{ color: "rgba(247,242,232,0.75)" }}>
+              Available Monday – Sunday, 10AM–3PM. Great meals at great prices.
+            </p>
+          </div>
+          <Link href="/menu?category=lunch-specials">
+            <button
+              className="font-heading font-bold tracking-wider px-8 py-3 rounded text-sm transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
+              style={{ backgroundColor: "#f5c842", color: "#1a3d0f" }}
+            >
+              SEE LUNCH DEALS
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Hours & Location ────────────────────────────────────────────── */}
+      <section id="contact" className="py-16" style={{ backgroundColor: "#f7f2e8" }}>
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-4xl font-bold" style={{ color: "#1c1c1c" }}>
+              Hours &amp; <span className="italic" style={{ color: "#2d5a1e" }}>Location</span>
+            </h2>
+            <div className="w-16 h-1 mx-auto mt-4 rounded" style={{ backgroundColor: "#c41e1e" }} />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Hours */}
+            <div
+              className="rounded-2xl p-6 shadow-sm border"
+              style={{ backgroundColor: "#ffffff", borderColor: "#e8e0d0" }}
+            >
+              <div className="flex items-center gap-2 mb-5">
+                <Clock className="w-5 h-5" style={{ color: "#2d5a1e" }} />
+                <h3 className="font-heading font-bold text-lg tracking-wide" style={{ color: "#1c1c1c" }}>
+                  HOURS
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {HOURS.map(({ day, hours }) => (
+                  <div
+                    key={day}
+                    className={`flex justify-between items-center py-2 px-3 rounded-lg text-sm ${day === TODAY_NAME ? "font-bold" : ""}`}
+                    style={{
+                      backgroundColor: day === TODAY_NAME ? "rgba(45,90,30,0.08)" : "transparent",
+                      borderLeft: day === TODAY_NAME ? "3px solid #2d5a1e" : "3px solid transparent",
+                    }}
+                  >
+                    <span style={{ color: day === TODAY_NAME ? "#2d5a1e" : "#555" }}>{day}</span>
+                    <span style={{ color: day === TODAY_NAME ? "#2d5a1e" : "#333" }}>{hours}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex flex-col gap-4">
+              <div
+                className="rounded-2xl p-6 shadow-sm border"
+                style={{ backgroundColor: "#ffffff", borderColor: "#e8e0d0" }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="w-5 h-5" style={{ color: "#c41e1e" }} />
+                  <h3 className="font-heading font-bold text-lg tracking-wide" style={{ color: "#1c1c1c" }}>
+                    LOCATION
+                  </h3>
+                </div>
+                <p className="font-semibold text-base" style={{ color: "#1c1c1c" }}>
+                  Casa de Pizza &amp; Wings
+                </p>
+                <p className="text-sm mt-1" style={{ color: "#555" }}>
+                  765 N Nellis Blvd, Suite 10<br />
+                  Las Vegas, NV 89110
+                </p>
+
+                <div className="mt-4 space-y-2">
+                  <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=765+N+Nellis+Blvd+Suite+10+Las+Vegas+NV+89110"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm font-semibold hover:underline"
+                    style={{ color: "#2d5a1e" }}
+                  >
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    Get Directions on Google Maps
+                  </a>
+                  <a
+                    href="tel:+17022005252"
+                    className="flex items-center gap-2 text-sm font-semibold hover:underline"
+                    style={{ color: "#c41e1e" }}
+                  >
+                    <Phone className="w-4 h-4 flex-shrink-0" />
+                    (702) 200-5252
+                  </a>
+                </div>
+
+                {/* Map embed */}
+                <div className="mt-4 w-full h-40 rounded-xl overflow-hidden border" style={{ borderColor: "#e8e0d0" }}>
                   <iframe
                     title="Casa de Pizza & Wings location"
                     width="100%"
@@ -277,50 +433,52 @@ export default function LandingPage() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* CTA card */}
-            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 flex flex-col gap-4">
-              <div>
-                <h3 className="font-display font-bold text-lg text-foreground">Ready to order?</h3>
-                <p className="text-muted-foreground text-sm mt-1">
+              {/* CTA */}
+              <div
+                className="rounded-2xl p-6 border"
+                style={{ backgroundColor: "#2d5a1e", borderColor: "#2d5a1e" }}
+              >
+                <h3 className="font-display font-bold text-xl" style={{ color: "#f7f2e8" }}>
+                  Ready to order?
+                </h3>
+                <p className="text-sm mt-1 mb-4" style={{ color: "rgba(247,242,232,0.75)" }}>
                   Browse our full menu and place your order online in minutes.
                 </p>
+                <Link href="/menu">
+                  <button
+                    className="w-full font-heading font-bold tracking-wider py-3 rounded text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                    style={{ backgroundColor: "#c41e1e", color: "#f7f2e8" }}
+                  >
+                    VIEW FULL MENU
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </Link>
               </div>
-              <Link href="/menu">
-                <Button className="w-full font-semibold" size="lg">
-                  View Full Menu
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-border px-6 py-8 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-            <Pizza className="w-3 h-3 text-primary-foreground" />
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer style={{ backgroundColor: "#1a3d0f", color: "rgba(247,242,232,0.7)" }}>
+        <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+          <div className="flex items-center gap-3">
+            <img src={LOGO_URL} alt="Casa de Pizza & Wings" className="h-10 w-10 object-contain rounded-full" />
+            <div>
+              <div className="font-display italic font-bold" style={{ color: "#f7f2e8" }}>Casa de Pizza &amp; Wings</div>
+              <div style={{ color: "rgba(247,242,232,0.6)" }}>765 N Nellis Blvd · Las Vegas, NV</div>
+            </div>
           </div>
-          <span className="font-display font-semibold text-foreground">Casa de Pizza & Wings</span>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          © {new Date().getFullYear()} Casa de Pizza & Wings · All rights reserved
-        </p>
-        <div className="flex items-center justify-center gap-4 mt-3">
-          <Link href="/menu" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Menu
-          </Link>
-          <span className="text-border">·</span>
-          <a href="#info" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Hours
-          </a>
-          <span className="text-border">·</span>
-          <a href="#info" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Location
-          </a>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <a href="tel:+17022005252" className="hover:underline font-semibold" style={{ color: "#f5c842" }}>
+              (702) 200-5252
+            </a>
+            <span>Open Daily 10AM – 10PM</span>
+          </div>
+          <div className="text-xs" style={{ color: "rgba(247,242,232,0.4)" }}>
+            © {new Date().getFullYear()} Casa de Pizza &amp; Wings. All rights reserved.
+          </div>
         </div>
       </footer>
     </div>
