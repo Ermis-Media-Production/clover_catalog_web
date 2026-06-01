@@ -113,16 +113,16 @@
 
 ## Order History Admin Page
 
-- [ ] tRPC procedure: orders.list — list all orders with customer info, total, status, items count
-- [ ] tRPC procedure: orders.getById — get order details with all items and modifiers
-- [ ] Admin Orders page (/orders) with table of all orders
-- [ ] Order detail view with customer info, items, modifiers, coupon, total
-- [ ] Register /orders route in DashboardLayout navigation
+- [x] tRPC procedure: orders.list — list all orders with customer info, total, status, items count
+- [x] tRPC procedure: orders.getById — get order details with all items and modifiers
+- [x] Admin Orders page (/orders) with table of all orders
+- [x] Order detail view with customer info, items, modifiers, coupon, total, Clover order ID
+- [x] Register /orders route in admin navigation (Home.tsx nav + Orders link)
 
 ## Landing Page Improvements
 
-- [ ] Add restaurant phone number to landing page
-- [ ] Update restaurant hours to real schedule
+- [x] Add restaurant phone number to landing page — (702) 200-5252
+- [x] Update restaurant hours to real schedule — 10:00 AM to 10:00 PM every day
 
 ## Clover Order Integration (Push orders to Clover POS)
 

@@ -8,13 +8,13 @@ const HERO_IMAGE =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663720514377/ejCzvr6KZgeQPg5quv8Pa2/hero_pizza_wings-kzMmbtFr4p4MhqzWSb6X7g.webp";
 
 const HOURS = [
-  { day: "Monday", hours: "11:00 AM – 10:00 PM" },
-  { day: "Tuesday", hours: "11:00 AM – 10:00 PM" },
-  { day: "Wednesday", hours: "11:00 AM – 10:00 PM" },
-  { day: "Thursday", hours: "11:00 AM – 10:00 PM" },
-  { day: "Friday", hours: "11:00 AM – 11:00 PM" },
-  { day: "Saturday", hours: "11:00 AM – 11:00 PM" },
-  { day: "Sunday", hours: "12:00 PM – 9:00 PM" },
+  { day: "Monday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Tuesday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Wednesday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Thursday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Friday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Saturday", hours: "10:00 AM – 10:00 PM" },
+  { day: "Sunday", hours: "10:00 AM – 10:00 PM" },
 ];
 
 function getTodayStatus() {
@@ -24,15 +24,15 @@ function getTodayStatus() {
   const minute = now.getMinutes();
   const current = hour * 60 + minute;
 
-  // Open/close times in minutes from midnight
+  // Open/close times in minutes from midnight — 10:00 AM to 10:00 PM every day
   const schedule: Record<number, { open: number; close: number }> = {
-    0: { open: 12 * 60, close: 21 * 60 },       // Sun
-    1: { open: 11 * 60, close: 22 * 60 },       // Mon
-    2: { open: 11 * 60, close: 22 * 60 },
-    3: { open: 11 * 60, close: 22 * 60 },
-    4: { open: 11 * 60, close: 22 * 60 },
-    5: { open: 11 * 60, close: 23 * 60 },       // Fri
-    6: { open: 11 * 60, close: 23 * 60 },       // Sat
+    0: { open: 10 * 60, close: 22 * 60 },       // Sun
+    1: { open: 10 * 60, close: 22 * 60 },       // Mon
+    2: { open: 10 * 60, close: 22 * 60 },
+    3: { open: 10 * 60, close: 22 * 60 },
+    4: { open: 10 * 60, close: 22 * 60 },
+    5: { open: 10 * 60, close: 22 * 60 },       // Fri
+    6: { open: 10 * 60, close: 22 * 60 },       // Sat
   };
 
   const today = schedule[day];
@@ -256,6 +256,13 @@ export default function LandingPage() {
                 >
                   <MapPin className="w-4 h-4 flex-shrink-0" />
                   <span>Get Directions on Google Maps</span>
+                </a>
+                <a
+                  href="tel:+17022005252"
+                  className="flex items-center gap-2 text-primary text-sm hover:underline"
+                >
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <span>(702) 200-5252</span>
                 </a>
                 <div className="w-full h-44 rounded-xl overflow-hidden border border-border">
                   <iframe
