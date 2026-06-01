@@ -1,0 +1,159 @@
+import { createContext, useContext, useEffect, useReducer, useState } from "react";
+
+export interface CartModifier {
+  name: string;
+  priceCents: number;
+}
+
+export interface CartItem {
+  itemCloverId: string;
+  itemName: string;
+  unitPriceCents: number;
+  quantity: number;
+  modifiers: CartModifier[];
+  /** Unique key = cloverId + sorted modifier names */
+  key: string;
+}
+
+interface CartState {
+  items: CartItem[];
+}
+
+type CartAction =
+  | { type: "ADD"; item: Omit<CartItem, "key"> }
+  | { type: "REMOVE"; key: string }
+  | { type: "SET_QTY"; key: string; quantity: number }
+  | { type: "CLEAR" }
+  | { type: "HYDRATE"; items: CartItem[] };
+
+function makeKey(cloverId: string, modifiers: CartModifier[]): string {
+  const modKey = modifiers
+    .map((m) => m.name)
+    .sort()
+    .join("|");
+  return `${cloverId}::${modKey}`;
+}
+
+function cartReducer(state: CartState, action: CartAction): CartState {
+  switch (action.type) {
+    case "HYDRATE":
+      return { items: action.items };
+
+    case "ADD": {
+      const key = makeKey(action.item.itemCloverId, action.item.modifiers);
+      const existing = state.items.find((i) => i.key === key);
+      if (existing) {
+        return {
+          items: state.items.map((i) =>
+            i.key === key ? { ...i, quantity: i.quantity + action.item.quantity } : i
+          ),
+        };
+      }
+      return { items: [...state.items, { ...action.item, key }] };
+    }
+
+    case "REMOVE":
+      return { items: state.items.filter((i) => i.key !== action.key) };
+
+    case "SET_QTY": {
+      if (action.quantity <= 0) {
+        return { items: state.items.filter((i) => i.key !== action.key) };
+      }
+      return {
+        items: state.items.map((i) =>
+          i.key === action.key ? { ...i, quantity: action.quantity } : i
+        ),
+      };
+    }
+
+    case "CLEAR":
+      return { items: [] };
+
+    default:
+      return state;
+  }
+}
+
+const STORAGE_KEY = "clover_cart_v1";
+
+function loadFromStorage(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as CartItem[];
+  } catch {
+    return [];
+  }
+}
+
+interface CartContextValue {
+  items: CartItem[];
+  totalItems: number;
+  totalCents: number;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  addItem: (item: Omit<CartItem, "key">) => void;
+  removeItem: (key: string) => void;
+  setQuantity: (key: string, quantity: number) => void;
+  clearCart: () => void;
+}
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(cartReducer, { items: [] });
+  const [isOpen, setIsOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const stored = loadFromStorage();
+    if (stored.length > 0) {
+      dispatch({ type: "HYDRATE", items: stored });
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+  }, [state.items, hydrated]);
+
+  const totalItems = state.items.reduce((s, i) => s + i.quantity, 0);
+  const totalCents = state.items.reduce(
+    (s, i) =>
+      s +
+      i.unitPriceCents * i.quantity +
+      i.modifiers.reduce((ms, m) => ms + m.priceCents, 0) * i.quantity,
+    0
+  );
+
+  return (
+    <CartContext.Provider
+      value={{
+        items: state.items,
+        totalItems,
+        totalCents,
+        isOpen,
+        openCart: () => setIsOpen(true),
+        closeCart: () => setIsOpen(false),
+        addItem: (item) => dispatch({ type: "ADD", item }),
+        removeItem: (key) => dispatch({ type: "REMOVE", key }),
+        setQuantity: (key, quantity) => dispatch({ type: "SET_QTY", key, quantity }),
+        clearCart: () => dispatch({ type: "CLEAR" }),
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart(): CartContextValue {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used inside CartProvider");
+  return ctx;
+}
+
+export { makeKey };

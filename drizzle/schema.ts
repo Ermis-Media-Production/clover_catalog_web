@@ -137,3 +137,45 @@ export const syncLogs = mysqlTable("sync_logs", {
 });
 
 export type SyncLog = typeof syncLogs.$inferSelect;
+
+// ─── Orders & Checkout ────────────────────────────────────────────────────────────────
+
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Unique reference shown to the customer */
+  reference: varchar("reference", { length: 32 }).notNull().unique(),
+  status: mysqlEnum("status", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
+  /** Total amount in cents */
+  totalCents: bigint("totalCents", { mode: "number" }).notNull(),
+  /** Customer info */
+  customerFirstName: varchar("customerFirstName", { length: 128 }).notNull(),
+  customerLastName: varchar("customerLastName", { length: 128 }).notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerPhone: varchar("customerPhone", { length: 32 }),
+  /** Authorize.net transaction ID returned on success */
+  authnetTransactionId: varchar("authnetTransactionId", { length: 64 }),
+  authnetAuthCode: varchar("authnetAuthCode", { length: 16 }),
+  /** Raw error message if payment failed */
+  paymentError: text("paymentError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;
+
+export const orderItems = mysqlTable("order_items", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  /** Clover item ID for reference */
+  itemCloverId: varchar("itemCloverId", { length: 64 }).notNull(),
+  itemName: varchar("itemName", { length: 255 }).notNull(),
+  /** Unit price at time of purchase in cents */
+  unitPriceCents: bigint("unitPriceCents", { mode: "number" }).notNull(),
+  quantity: int("quantity").notNull().default(1),
+  /** Selected modifiers stored as JSON string */
+  modifiersJson: text("modifiersJson"),
+});
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = typeof orderItems.$inferInsert;

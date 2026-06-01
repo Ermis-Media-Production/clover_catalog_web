@@ -43,12 +43,12 @@
 ## Scheduled Sync
 - [x] Heartbeat-based scheduled sync handler at /api/scheduled/clover-sync
 - [x] Mounted in server/_core/index.ts before Vite fallthrough
-- [ ] Heartbeat cron job created (requires deploy first — see delivery notes)
+- [x] Heartbeat cron job setup/cancel UI built (Enable Auto-Sync button on Sync Dashboard; job registers after deploy)
 
 ## Secrets / Configuration
-- [ ] CLOVER_MERCHANT_ID env variable (needs user input)
-- [ ] CLOVER_API_TOKEN env variable (needs user input)
-- [ ] CLOVER_API_BASE_URL env variable (default: https://api.clover.com)
+- [x] CLOVER_MERCHANT_ID env variable (set and validated)
+- [x] CLOVER_API_TOKEN env variable (set and validated)
+- [x] CLOVER_API_BASE_URL env variable (set to https://api.clover.com)
 
 ## Tests
 - [x] Vitest: catalog.getCategories — public access
@@ -58,3 +58,25 @@
 - [x] Vitest: catalog.syncNow — admin allowed
 - [x] Vitest: catalog.syncNow — non-admin rejected
 - [x] Vitest: catalog.syncNow — unauthenticated rejected
+
+## Carrito de Compras y Checkout (Authorize.net)
+- [x] Schema DB: tabla orders y order_items
+- [x] Migración aplicada a la base de datos
+- [x] Integración Authorize.net: charge con tarjeta (createTransactionRequest)
+- [x] tRPC router: cart procedures (createOrder, getOrder, placeOrder)
+- [x] CartContext global con estado persistente en localStorage
+- [x] CartDrawer: sidebar deslizable con items, cantidades y total
+- [x] Botón "Agregar al carrito" en cada item del catálogo
+- [x] Página /checkout con formulario de datos del cliente y tarjeta
+- [x] Página /order-confirmation con resumen de la orden
+- [x] Manejo de errores de pago con mensajes claros al usuario
+- [x] Tests Vitest para el router de órdenes
+
+## Menú Interactivo Público
+
+- [x] Sincronización completa con Clover (todas las categorías e items) — 293 items, 39 cat., 653 mods
+- [x] Página /menu pública con items agrupados por categoría
+- [x] Navegación lateral sticky por categoría en el menú
+- [x] Modal interactivo paso a paso para selección de modificadores
+- [x] Botón "Add to Cart" en cada item del menú
+- [x] CartDrawer global con resumen, cantidades y checkout
