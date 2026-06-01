@@ -13,6 +13,7 @@ import CatalogPage from "@/pages/CatalogPage";
 import SyncPage from "@/pages/SyncPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import OrderConfirmationPage from "@/pages/OrderConfirmationPage";
+import CouponsPage from "@/pages/CouponsPage";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/admin" component={Home} />
       <Route path="/catalog" component={CatalogPage} />
       <Route path="/sync" component={SyncPage} />
+      <Route path="/coupons" component={CouponsPage} />
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

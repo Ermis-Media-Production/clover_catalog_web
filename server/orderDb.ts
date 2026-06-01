@@ -17,7 +17,7 @@ function generateReference(): string {
   return `ORD-${nanoid(8).toUpperCase()}`;
 }
 
-/** Create a new pending order with its line items. Returns the order id and reference. */
+/** Create a new pending order with its line items. Returns the order id, reference, and totals. */
 export async function createPendingOrder(
   customer: {
     firstName: string;
@@ -25,12 +25,13 @@ export async function createPendingOrder(
     email: string;
     phone?: string;
   },
-  items: CartItem[]
-): Promise<{ id: number; reference: string; totalCents: number }> {
+  items: CartItem[],
+  coupon?: { code: string; discountCents: number }
+): Promise<{ id: number; reference: string; totalCents: number; discountCents: number; finalCents: number }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const totalCents = items.reduce(
+  const subtotalCents = items.reduce(
     (sum, item) =>
       sum +
       item.unitPriceCents * item.quantity +
@@ -38,16 +39,22 @@ export async function createPendingOrder(
     0
   );
 
+  const discountCents = coupon?.discountCents ?? 0;
+  // Final total is never negative
+  const finalCents = Math.max(0, subtotalCents - discountCents);
+
   const reference = generateReference();
 
   const orderValues: InsertOrder = {
     reference,
     status: "pending",
-    totalCents,
+    totalCents: finalCents,
     customerFirstName: customer.firstName,
     customerLastName: customer.lastName,
     customerEmail: customer.email,
     customerPhone: customer.phone ?? null,
+    couponCode: coupon?.code ?? null,
+    discountCents: discountCents,
   };
 
   const [result] = await db.insert(orders).values(orderValues);
@@ -66,7 +73,7 @@ export async function createPendingOrder(
     await db.insert(orderItems).values(lineItems);
   }
 
-  return { id: orderId, reference, totalCents };
+  return { id: orderId, reference, totalCents: subtotalCents, discountCents, finalCents };
 }
 
 /** Mark an order as paid with Authorize.net transaction details. */

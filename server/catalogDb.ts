@@ -143,6 +143,49 @@ export async function getItemsWithAssociations(opts?: { categoryId?: string; sea
   return result;
 }
 
+/** Update the custom image fields for a single item */
+export async function updateItemCustomImage(
+  cloverId: string,
+  customImageUrl: string,
+  customImageKey: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(cloverItems)
+    .set({ customImageUrl, customImageKey })
+    .where(eq(cloverItems.cloverId, cloverId));
+}
+
+/** Clear the custom image fields for a single item */
+export async function clearItemCustomImage(cloverId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db
+    .select({ customImageKey: cloverItems.customImageKey })
+    .from(cloverItems)
+    .where(eq(cloverItems.cloverId, cloverId))
+    .limit(1);
+  const key = rows[0]?.customImageKey ?? null;
+  await db
+    .update(cloverItems)
+    .set({ customImageUrl: null, customImageKey: null })
+    .where(eq(cloverItems.cloverId, cloverId));
+  return key;
+}
+
+/** Get a single item by Clover ID */
+export async function getItemByCloverId(cloverId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(cloverItems)
+    .where(eq(cloverItems.cloverId, cloverId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function getSyncLogs(limit = 20) {
   const db = await getDb();
   if (!db) return [];

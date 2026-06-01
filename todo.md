@@ -88,3 +88,25 @@
 - [x] Sección de dirección / ubicación
 - [x] Navegación pública separada del panel admin
 - [x] Diseño con identidad visual de Casa de Pizza & Wings
+
+## Subida de Fotos de Platos (Admin)
+
+- [ ] Columna customImageUrl en clover_items (DB migration)
+- [ ] Endpoint de subida de imagen (multipart/form-data → S3)
+- [ ] tRPC procedure: uploadItemImage y removeItemImage
+- [ ] Página /admin/photos con grid de todos los items y botón de subida por item
+- [ ] Preview de imagen actual y opción de reemplazar o eliminar
+- [ ] Filtro/búsqueda de items en la página de fotos
+- [ ] MenuPage: mostrar customImageUrl si existe, con fallback a imagen de Clover o placeholder
+- [ ] Tests Vitest para los procedures de imagen
+
+## Sistema de Cupones de Descuento
+
+- [ ] Tabla `coupons` en DB (código, tipo, valor, activo, usos, expiración)
+- [ ] Cupón Casa98 creado (98% de descuento, tipo porcentaje)
+- [ ] tRPC procedure: validateCoupon (retorna descuento calculado)
+- [ ] tRPC procedure: applyCoupon en placeOrder (aplica descuento al total)
+- [ ] Campo de cupón en CheckoutPage con feedback visual (válido/inválido)
+- [ ] Total actualizado en tiempo real al aplicar cupón
+- [ ] Página de gestión de cupones en panel admin (/admin/coupons)
+- [ ] Tests Vitest para validateCoupon

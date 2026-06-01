@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { scheduledSyncHandler } from "../scheduledSync";
+import { registerImageUploadRoutes } from "../imageUpload";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +41,9 @@ async function startServer() {
 
   // Scheduled heartbeat endpoints — must be registered before Vite/static fallthrough
   app.post("/api/scheduled/clover-sync", scheduledSyncHandler);
+
+  // Item image upload/delete routes (multipart)
+  registerImageUploadRoutes(app as any);
 
   // tRPC API
   app.use(

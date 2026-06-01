@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { LayoutGrid, RefreshCw, ArrowRight } from "lucide-react";
+import { LayoutGrid, RefreshCw, ArrowRight, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 
@@ -7,6 +7,7 @@ export default function Home() {
   const { data: lastSync, error: lastSyncError } = trpc.catalog.getLastSync.useQuery();
   const { data: items, error: itemsError } = trpc.catalog.getItems.useQuery({});
   const { data: categories, error: categoriesError } = trpc.catalog.getCategories.useQuery();
+  const { data: coupons } = trpc.coupon.list.useQuery();
   const statsError = lastSyncError ?? itemsError ?? categoriesError;
 
   return (
@@ -25,6 +26,9 @@ export default function Home() {
           </Link>
           <Link href="/sync">
             <Button variant="ghost" size="sm">Sync</Button>
+          </Link>
+          <Link href="/coupons">
+            <Button variant="ghost" size="sm">Coupons</Button>
           </Link>
         </nav>
       </header>
@@ -84,6 +88,11 @@ export default function Home() {
                   ? new Date(lastSync.finishedAt).toLocaleDateString()
                   : undefined
               }
+            />
+            <StatCard
+              label="Active Coupons"
+              value={coupons ? coupons.filter((c) => c.active).length : "—"}
+              icon={<Tag className="w-5 h-5 text-primary" />}
             />
           </div>
         </section>

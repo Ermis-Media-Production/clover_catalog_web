@@ -81,6 +81,10 @@ export const cloverItems = mysqlTable("clover_items", {
   available: boolean("available").default(true),
   stockCount: int("stockCount"),
   imageUrl: text("imageUrl"),
+  /** Custom image uploaded by admin (overrides Clover imageUrl) */
+  customImageUrl: text("customImageUrl"),
+  /** S3 key for the custom image (used for deletion) */
+  customImageKey: text("customImageKey"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
@@ -157,6 +161,10 @@ export const orders = mysqlTable("orders", {
   authnetAuthCode: varchar("authnetAuthCode", { length: 16 }),
   /** Raw error message if payment failed */
   paymentError: text("paymentError"),
+  /** Coupon code applied to this order */
+  couponCode: varchar("couponCode", { length: 64 }),
+  /** Discount amount in cents */
+  discountCents: bigint("discountCents", { mode: "number" }).default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -179,3 +187,29 @@ export const orderItems = mysqlTable("order_items", {
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = typeof orderItems.$inferInsert;
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+
+export const coupons = mysqlTable("coupons", {
+  id: int("id").autoincrement().primaryKey(),
+  /** The coupon code customers enter at checkout (case-insensitive stored uppercase) */
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  description: varchar("description", { length: 255 }),
+  /** 'percentage' = percent off total, 'fixed' = fixed cents off */
+  discountType: mysqlEnum("discountType", ["percentage", "fixed"]).notNull().default("percentage"),
+  /** For percentage: 0-100. For fixed: amount in cents. */
+  discountValue: int("discountValue").notNull(),
+  /** Whether the coupon is currently active */
+  active: boolean("active").notNull().default(true),
+  /** Maximum number of total uses (null = unlimited) */
+  maxUses: int("maxUses"),
+  /** How many times this coupon has been used */
+  usedCount: int("usedCount").notNull().default(0),
+  /** Optional expiry date */
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = typeof coupons.$inferInsert;
