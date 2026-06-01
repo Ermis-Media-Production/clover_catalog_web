@@ -80,3 +80,11 @@
 - [x] Modal interactivo paso a paso para selección de modificadores
 - [x] Botón "Add to Cart" en cada item del menú
 - [x] CartDrawer global con resumen, cantidades y checkout
+
+## Landing Page Pública
+
+- [x] Hero banner con nombre del restaurante, slogan y CTA al menú
+- [x] Sección de horarios del restaurante
+- [x] Sección de dirección / ubicación
+- [x] Navegación pública separada del panel admin
+- [x] Diseño con identidad visual de Casa de Pizza & Wings
