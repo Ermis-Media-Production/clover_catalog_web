@@ -165,6 +165,8 @@ export const orders = mysqlTable("orders", {
   couponCode: varchar("couponCode", { length: 64 }),
   /** Discount amount in cents */
   discountCents: bigint("discountCents", { mode: "number" }).default(0),
+  /** Clover order ID after the order is pushed to the Clover POS */
+  cloverOrderId: varchar("cloverOrderId", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

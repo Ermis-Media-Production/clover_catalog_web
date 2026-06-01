@@ -1,9 +1,18 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { publicProcedure, router } from "../_core/trpc";
-import { createPendingOrder, markOrderPaid, markOrderFailed, getOrderByReference } from "../orderDb";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import {
+  createPendingOrder,
+  markOrderPaid,
+  markOrderFailed,
+  getOrderByReference,
+  listOrders,
+  getOrderById,
+  saveCloverOrderId,
+} from "../orderDb";
 import { chargeCard } from "../authnet";
 import { validateCoupon, incrementCouponUsage } from "../couponDb";
+import { createCloverOrder } from "../cloverOrders";
 
 const cartItemSchema = z.object({
   itemCloverId: z.string().min(1),
@@ -22,7 +31,7 @@ const cartItemSchema = z.object({
 
 export const checkoutRouter = router({
   /**
-   * Place an order: create DB record, charge card, update status.
+   * Place an order: create DB record, charge card, push to Clover POS.
    * Returns the order reference on success so the client can navigate to confirmation.
    */
   placeOrder: publicProcedure
@@ -78,7 +87,7 @@ export const checkoutRouter = router({
         couponData
       );
 
-      // 3. Charge the card
+      // 3. Charge the card via Authorize.net
       const chargeResult = await chargeCard({
         amountCents: finalCents,
         cardNumber: input.payment.cardNumber,
@@ -91,13 +100,29 @@ export const checkoutRouter = router({
         description: `Order ${reference} — ${input.items.length} item(s)`,
       });
 
-      // 4. Update order status
+      // 4. Update local order status based on payment result
       if (chargeResult.success && chargeResult.transactionId) {
         await markOrderPaid(orderId, chargeResult.transactionId, chargeResult.authCode ?? "");
+
         // Increment coupon usage counter after successful payment
         if (couponData?.code) {
           await incrementCouponUsage(couponData.code).catch(() => {});
         }
+
+        // 5. Push order to Clover POS (fire-and-forget with error logging)
+        //    We do NOT fail the checkout if Clover is unavailable — the payment
+        //    already succeeded and the customer should get their confirmation.
+        const customerName = `${input.customer.firstName} ${input.customer.lastName}`;
+        createCloverOrder(input.items, finalCents, reference, customerName)
+          .then(({ cloverOrderId }) => {
+            return saveCloverOrderId(orderId, cloverOrderId).catch((err) => {
+              console.error(`[Clover] Failed to save cloverOrderId for order ${reference}:`, err);
+            });
+          })
+          .catch((err) => {
+            console.error(`[Clover] Failed to create Clover order for ${reference}:`, err);
+          });
+
         return { success: true, reference, transactionId: chargeResult.transactionId };
       } else {
         await markOrderFailed(orderId, chargeResult.errorMessage ?? "Payment declined");
@@ -113,6 +138,30 @@ export const checkoutRouter = router({
     .input(z.object({ reference: z.string() }))
     .query(async ({ input }) => {
       const order = await getOrderByReference(input.reference);
+      if (!order) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
+      }
+      return order;
+    }),
+
+  /** List all orders — admin only. */
+  listOrders: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(500).optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+      return listOrders(input?.limit ?? 200);
+    }),
+
+  /** Get a full order with items by ID — admin only. */
+  getOrderById: protectedProcedure
+    .input(z.object({ id: z.number().int().min(1) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+      const order = await getOrderById(input.id);
       if (!order) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
       }

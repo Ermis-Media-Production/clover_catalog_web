@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getDb } from "./db";
 import { orders, orderItems } from "../drizzle/schema";
@@ -100,6 +100,51 @@ export async function markOrderFailed(orderId: number, errorMessage: string): Pr
     .where(eq(orders.id, orderId));
 }
 
+/** Save the Clover order ID after successful push to Clover POS. */
+export async function saveCloverOrderId(orderId: number, cloverOrderId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(orders)
+    .set({ cloverOrderId })
+    .where(eq(orders.id, orderId));
+}
+
+/** List all orders for admin view, most recent first. */
+export async function listOrders(limit = 200) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db
+    .select()
+    .from(orders)
+    .orderBy(desc(orders.createdAt))
+    .limit(limit);
+}
+
+/** Fetch a full order with its line items by ID. */
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const orderRows = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, id))
+    .limit(1);
+  if (orderRows.length === 0) return null;
+  const order = orderRows[0]!;
+  const items = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, order.id));
+  return {
+    ...order,
+    items: items.map((item) => ({
+      ...item,
+      modifiers: item.modifiersJson ? JSON.parse(item.modifiersJson) : [],
+    })),
+  };
+}
+
 /** Fetch a full order with its line items by reference. */
 export async function getOrderByReference(reference: string) {
   const db = await getDb();
@@ -113,7 +158,7 @@ export async function getOrderByReference(reference: string) {
 
   if (orderRows.length === 0) return null;
 
-  const order = orderRows[0];
+  const order = orderRows[0]!;
   const items = await db
     .select()
     .from(orderItems)

@@ -110,3 +110,28 @@
 - [x] Total actualizado en tiempo real al aplicar cupón
 - [x] Página de gestión de cupones en panel admin (/coupons)
 - [x] Tests Vitest para validateCoupon (9 tests en coupon.test.ts)
+
+## Order History Admin Page
+
+- [ ] tRPC procedure: orders.list — list all orders with customer info, total, status, items count
+- [ ] tRPC procedure: orders.getById — get order details with all items and modifiers
+- [ ] Admin Orders page (/orders) with table of all orders
+- [ ] Order detail view with customer info, items, modifiers, coupon, total
+- [ ] Register /orders route in DashboardLayout navigation
+
+## Landing Page Improvements
+
+- [ ] Add restaurant phone number to landing page
+- [ ] Update restaurant hours to real schedule
+
+## Clover Order Integration (Push orders to Clover POS)
+
+- [x] Research Clover Orders API (POST /v3/merchants/{mId}/orders, add line items, mark as paid)
+- [x] Create cloverOrders.ts helper: createCloverOrder(items, customer) → cloverOrderId
+- [x] Add line items to Clover order: POST /v3/merchants/{mId}/orders/{orderId}/bulk_line_items
+- [x] Mark Clover order as locked (paid externally) after successful Authorize.net charge
+- [x] Store cloverOrderId in local orders table (new column)
+- [x] Wire cloverOrders.ts into checkout.ts placeOrder mutation (after markOrderPaid)
+- [x] Handle Clover API errors gracefully (log but don't fail the local order)
+- [x] Add DB migration for cloverOrderId column in orders table
+- [x] Add Vitest tests for Clover order creation helper (6 tests)

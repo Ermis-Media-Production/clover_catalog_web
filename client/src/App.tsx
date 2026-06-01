@@ -15,6 +15,7 @@ import CheckoutPage from "@/pages/CheckoutPage";
 import OrderConfirmationPage from "@/pages/OrderConfirmationPage";
 import CouponsPage from "@/pages/CouponsPage";
 import PhotosPage from "@/pages/PhotosPage";
+import OrdersPage from "@/pages/OrdersPage";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/sync" component={SyncPage} />
       <Route path="/coupons" component={CouponsPage} />
       <Route path="/photos" component={PhotosPage} />
+      <Route path="/orders" component={OrdersPage} />
       {/* Fallback */}
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
