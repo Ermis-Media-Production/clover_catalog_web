@@ -1,6 +1,7 @@
 /**
- * Tests for the Clover Orders integration helper.
+ * Tests for the Clover Orders integration — atomic order flow.
  * Uses vi.stubGlobal to mock fetch so no real HTTP calls are made.
+ * Also mocks setTimeout so sleep(2000) resolves instantly in tests.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -8,6 +9,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 process.env.CLOVER_API_BASE_URL = "https://api.clover.com";
 process.env.CLOVER_MERCHANT_ID = "TEST_MERCHANT";
 process.env.CLOVER_API_TOKEN = "TEST_TOKEN";
+process.env.CLOVER_PRINTER_DEVICE_ID = "DEVICE_001";
+process.env.CLOVER_PAYMENT_TENDER_ID = "TENDER_001";
+process.env.CLOVER_ORDER_TYPE_ID = "ORDER_TYPE_001";
+process.env.CLOVER_EMPLOYEE_ID = "EMP_001";
 
 import { createCloverOrder } from "./cloverOrders";
 
@@ -17,7 +22,7 @@ const mockItems = [
     itemName: "Pepperoni Pizza",
     unitPriceCents: 1599,
     quantity: 1,
-    modifiers: [{ name: "Extra Cheese", priceCents: 200 }],
+    modifiers: [{ cloverId: "MOD001", name: "Extra Cheese", priceCents: 200 }],
   },
   {
     itemCloverId: "ITEM002",
@@ -40,79 +45,139 @@ function makeFetchMock(responses: Array<{ ok: boolean; json: () => unknown; text
   });
 }
 
-describe("createCloverOrder", () => {
+describe("createCloverOrder — atomic order flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Mock setTimeout so sleep(2000) resolves instantly
+    vi.stubGlobal("setTimeout", (fn: () => void) => { fn(); return 0; });
   });
 
-  it("creates an order and returns the cloverOrderId", async () => {
+  it("calls atomic_order endpoint and returns cloverOrderId", async () => {
     const fetchMock = makeFetchMock([
-      // POST /orders → returns order with id
-      { ok: true, json: () => ({ id: "CLV_ORDER_001" }) },
-      // POST /bulk_line_items → success
-      { ok: true, json: () => ({ items: [] }) },
-      // POST /orders/{id} → update total/state
-      { ok: true, json: () => ({ id: "CLV_ORDER_001", state: "locked" }) },
+      // POST /atomic_order/orders
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_001" }) },
+      // POST /print_event
+      { ok: true, json: () => ({}) },
+      // POST /orders/{id}/payments
+      { ok: true, json: () => ({}) },
     ]);
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await createCloverOrder(mockItems, 4697, "ORD-TESTREF1", "John Doe");
+    const result = await createCloverOrder(mockItems, 4697, "ORD-001", "John Doe");
 
-    expect(result.cloverOrderId).toBe("CLV_ORDER_001");
+    expect(result.cloverOrderId).toBe("CLV_ATOMIC_001");
+    expect(result.printed).toBe(true);
+    expect(result.paid).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
-  it("sends correct order body with note and total", async () => {
+  it("uses /atomic_order/orders endpoint (not /orders)", async () => {
     const fetchMock = makeFetchMock([
-      { ok: true, json: () => ({ id: "CLV_ORDER_002" }) },
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_002" }) },
       { ok: true, json: () => ({}) },
       { ok: true, json: () => ({}) },
     ]);
     vi.stubGlobal("fetch", fetchMock);
 
-    await createCloverOrder(mockItems, 5000, "ORD-TESTREF2", "Jane Smith");
+    await createCloverOrder(mockItems, 4697, "ORD-002", "Jane Smith");
 
-    const firstCallBody = JSON.parse((fetchMock.mock.calls[0] as any)[1].body);
-    expect(firstCallBody.state).toBe("open");
-    expect(firstCallBody.total).toBe(5000);
-    expect(firstCallBody.note).toContain("ORD-TESTREF2");
-    expect(firstCallBody.note).toContain("Jane Smith");
+    const firstCallUrl = (fetchMock.mock.calls[0] as any)[0];
+    expect(firstCallUrl).toContain("/atomic_order/orders");
   });
 
-  it("expands items with quantity > 1 into multiple line item entries", async () => {
+  it("sends orderCart with lineItems, note, total, orderType, and employee", async () => {
     const fetchMock = makeFetchMock([
-      { ok: true, json: () => ({ id: "CLV_ORDER_003" }) },
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_003" }) },
       { ok: true, json: () => ({}) },
       { ok: true, json: () => ({}) },
     ]);
     vi.stubGlobal("fetch", fetchMock);
 
-    await createCloverOrder(mockItems, 4697, "ORD-TESTREF3", "Test User");
+    await createCloverOrder(mockItems, 5000, "ORD-003", "Test User");
 
-    // Second call is bulk_line_items
-    const bulkCallBody = JSON.parse((fetchMock.mock.calls[1] as any)[1].body);
-    // mockItems has qty 1 + qty 2 = 3 line item entries
-    expect(bulkCallBody.items).toHaveLength(3);
+    const body = JSON.parse((fetchMock.mock.calls[0] as any)[1].body);
+    expect(body.orderCart).toBeDefined();
+    expect(body.orderCart.lineItems).toBeDefined();
+    expect(body.orderCart.note).toContain("ORD-003");
+    expect(body.orderCart.note).toContain("Test User");
+    expect(body.orderCart.total).toBe(5000);
+    expect(body.orderCart.orderType).toEqual({ id: "ORDER_TYPE_001" });
+    expect(body.orderCart.employee).toEqual({ id: "EMP_001" });
   });
 
-  it("includes modifier price in unit price for line items", async () => {
+  it("expands items with quantity > 1 into multiple lineItem entries", async () => {
     const fetchMock = makeFetchMock([
-      { ok: true, json: () => ({ id: "CLV_ORDER_004" }) },
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_004" }) },
       { ok: true, json: () => ({}) },
       { ok: true, json: () => ({}) },
     ]);
     vi.stubGlobal("fetch", fetchMock);
 
-    await createCloverOrder(mockItems, 4697, "ORD-TESTREF4", "Test User");
+    await createCloverOrder(mockItems, 4697, "ORD-004", "Test User");
 
-    const bulkCallBody = JSON.parse((fetchMock.mock.calls[1] as any)[1].body);
-    // First item: 1599 + 200 modifier = 1799
-    expect(bulkCallBody.items[0].price).toBe(1799);
-    // Second item (Buffalo Wings, no modifiers): 1299
-    expect(bulkCallBody.items[1].price).toBe(1299);
+    const body = JSON.parse((fetchMock.mock.calls[0] as any)[1].body);
+    // qty 1 + qty 2 = 3 line items
+    expect(body.orderCart.lineItems).toHaveLength(3);
   });
 
-  it("throws if Clover API returns non-ok on order creation", async () => {
+  it("includes modifications with modifier.id and amount in lineItems", async () => {
+    const fetchMock = makeFetchMock([
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_005" }) },
+      { ok: true, json: () => ({}) },
+      { ok: true, json: () => ({}) },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createCloverOrder(mockItems, 4697, "ORD-005", "Test User");
+
+    const body = JSON.parse((fetchMock.mock.calls[0] as any)[1].body);
+    const firstItem = body.orderCart.lineItems[0];
+    expect(firstItem.modifications).toHaveLength(1);
+    expect(firstItem.modifications[0].modifier).toEqual({ id: "MOD001" });
+    expect(firstItem.modifications[0].amount).toBe(200);
+    expect(firstItem.modifications[0].name).toBe("Extra Cheese");
+  });
+
+  it("sends print_event to the correct device BEFORE payment", async () => {
+    const callOrder: string[] = [];
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("atomic_order")) callOrder.push("atomic");
+      else if (url.includes("print_event")) callOrder.push("print");
+      else if (url.includes("payments")) callOrder.push("payment");
+      return { ok: true, json: async () => ({ id: "CLV_ATOMIC_006" }), text: async () => "" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createCloverOrder(mockItems, 4697, "ORD-006", "Test User");
+
+    expect(callOrder).toEqual(["atomic", "print", "payment"]);
+
+    // Verify print_event payload
+    const printCall = (fetchMock.mock.calls as any[]).find((c) => c[0].includes("print_event"));
+    expect(printCall).toBeDefined();
+    const printBody = JSON.parse(printCall[1].body);
+    expect(printBody.orderRef.id).toBe("CLV_ATOMIC_006");
+    expect(printBody.deviceRef.id).toBe("DEVICE_001");
+  });
+
+  it("sends payment with correct amount and tender ID", async () => {
+    const fetchMock = makeFetchMock([
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_007" }) },
+      { ok: true, json: () => ({}) },
+      { ok: true, json: () => ({}) },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await createCloverOrder(mockItems, 3999, "ORD-007", "Test User");
+
+    const paymentCall = (fetchMock.mock.calls as any[])[2];
+    expect(paymentCall[0]).toContain("/payments");
+    const paymentBody = JSON.parse(paymentCall[1].body);
+    expect(paymentBody.amount).toBe(3999);
+    expect(paymentBody.tender.id).toBe("TENDER_001");
+  });
+
+  it("throws if atomic_order API returns non-ok", async () => {
     const fetchMock = makeFetchMock([
       { ok: false, json: () => ({}), text: () => "Unauthorized" },
     ]);
@@ -123,15 +188,31 @@ describe("createCloverOrder", () => {
     ).rejects.toThrow("Clover API error");
   });
 
-  it("throws if Clover does not return an order ID", async () => {
+  it("throws if atomic_order does not return an order ID", async () => {
     const fetchMock = makeFetchMock([
-      // Returns empty object without id
       { ok: true, json: () => ({}) },
     ]);
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
       createCloverOrder(mockItems, 4697, "ORD-NOID", "Test User")
-    ).rejects.toThrow("Clover did not return an order ID");
+    ).rejects.toThrow("Clover atomic order did not return an order ID");
+  });
+
+  it("continues (printed=false) if print_event fails without throwing", async () => {
+    const fetchMock = makeFetchMock([
+      { ok: true, json: () => ({ id: "CLV_ATOMIC_008" }) },
+      // print_event fails
+      { ok: false, json: () => ({}), text: () => "Device not found" },
+      // payment still succeeds
+      { ok: true, json: () => ({}) },
+    ]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await createCloverOrder(mockItems, 4697, "ORD-PRINT-FAIL", "Test User");
+
+    expect(result.cloverOrderId).toBe("CLV_ATOMIC_008");
+    expect(result.printed).toBe(false);
+    expect(result.paid).toBe(true);
   });
 });

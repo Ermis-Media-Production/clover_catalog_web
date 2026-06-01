@@ -135,3 +135,12 @@
 - [x] Handle Clover API errors gracefully (log but don't fail the local order)
 - [x] Add DB migration for cloverOrderId column in orders table
 - [x] Add Vitest tests for Clover order creation helper (6 tests)
+
+## Clover Atomic Order Flow (print_event integration)
+
+- [x] Rewrite cloverOrders.ts to use /atomic_order/orders endpoint (not /orders + bulk_line_items)
+- [x] Add sleep(2s) after atomic order creation before print_event
+- [x] Send POST /print_event with orderRef + deviceRef BEFORE marking as paid
+- [x] Send POST /orders/{id}/payments to mark order as paid externally (after print)
+- [x] Add CLOVER_PRINTER_DEVICE_ID and CLOVER_PAYMENT_TENDER_ID env secrets
+- [x] 10 Vitest tests covering atomic flow, print order, payment, error handling
