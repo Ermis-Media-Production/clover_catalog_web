@@ -36,6 +36,7 @@ type MenuItem = {
   price: number | null;
   description: string | null;
   imageUrl: string | null;
+  customImageUrl: string | null;
   available: boolean | null;
   hidden: boolean | null;
   categoryIds: string[];
@@ -347,9 +348,9 @@ function MenuItemCard({
     <div className="group rounded-2xl border border-border bg-card overflow-hidden flex flex-col hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200">
       {/* Image */}
       <div className="relative h-40 bg-muted overflow-hidden">
-        {item.imageUrl ? (
+        {(item.customImageUrl ?? item.imageUrl) ? (
           <img
-            src={item.imageUrl}
+            src={(item.customImageUrl ?? item.imageUrl)!}
             alt={item.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

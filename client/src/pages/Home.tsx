@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { LayoutGrid, RefreshCw, ArrowRight, Tag } from "lucide-react";
+import { LayoutGrid, RefreshCw, ArrowRight, Tag, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 
@@ -29,6 +29,9 @@ export default function Home() {
           </Link>
           <Link href="/coupons">
             <Button variant="ghost" size="sm">Coupons</Button>
+          </Link>
+          <Link href="/photos">
+            <Button variant="ghost" size="sm">Photos</Button>
           </Link>
         </nav>
       </header>
@@ -93,6 +96,11 @@ export default function Home() {
               label="Active Coupons"
               value={coupons ? coupons.filter((c) => c.active).length : "—"}
               icon={<Tag className="w-5 h-5 text-primary" />}
+            />
+            <StatCard
+              label="Custom Photos"
+              value={items ? items.filter((i: any) => i.customImageUrl).length : "—"}
+              icon={<Image className="w-5 h-5 text-primary" />}
             />
           </div>
         </section>
