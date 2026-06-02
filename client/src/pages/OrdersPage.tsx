@@ -310,6 +310,16 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
+                {/* Special Instructions */}
+                {orderDetail.specialInstructions && (
+                  <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <span>📝</span> Special Instructions
+                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">{orderDetail.specialInstructions}</p>
+                  </div>
+                )}
+
                 {/* Clover POS Order */}
                 {orderDetail.cloverOrderId && (
                   <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">

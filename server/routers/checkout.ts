@@ -85,7 +85,8 @@ export const checkoutRouter = router({
       const { id: orderId, reference, finalCents } = await createPendingOrder(
         input.customer,
         input.items,
-        couponData
+        couponData,
+        input.specialInstructions
       );
 
       // 3. Charge the card via Authorize.net

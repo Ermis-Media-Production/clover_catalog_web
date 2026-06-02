@@ -26,7 +26,8 @@ export async function createPendingOrder(
     phone?: string;
   },
   items: CartItem[],
-  coupon?: { code: string; discountCents: number }
+  coupon?: { code: string; discountCents: number },
+  specialInstructions?: string
 ): Promise<{ id: number; reference: string; totalCents: number; discountCents: number; finalCents: number }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -55,6 +56,7 @@ export async function createPendingOrder(
     customerPhone: customer.phone ?? null,
     couponCode: coupon?.code ?? null,
     discountCents: discountCents,
+    specialInstructions: specialInstructions ?? null,
   };
 
   const [result] = await db.insert(orders).values(orderValues);

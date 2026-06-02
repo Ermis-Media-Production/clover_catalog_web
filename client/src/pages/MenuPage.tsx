@@ -244,6 +244,10 @@ export default function MenuPage() {
 
   const isPizzaGroupActive = !!activePizzaCat;
 
+  const now = new Date();
+  const hour = now.getHours();
+  const isLunchTime = hour >= 10 && hour < 15;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f2e8" }}>
       {/* Top bar */}
@@ -378,6 +382,33 @@ export default function MenuPage() {
           </div>
         </div>
       </div>
+
+      {/* Lunch Specials Banner — visible 10am–3pm */}
+      {isLunchTime && (
+        <div
+          className="w-full flex items-center justify-between gap-3 px-4 md:px-8 py-3"
+          style={{ backgroundColor: "#f5c842", borderBottom: "2px solid #d4a800" }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🌟</span>
+            <div>
+              <p className="font-bold text-sm md:text-base leading-tight" style={{ color: "#1a3d0f", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.05em" }}>
+                LUNCH SPECIALS — ONLY $11.99
+              </p>
+              <p className="text-xs md:text-sm" style={{ color: "#2d5a1e" }}>
+                Available 10 AM – 3 PM · Wings, Pizza, Fingers, Salads & more
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => scrollToCategory(sortedCategories.find(c => c.name.toLowerCase().includes('lunch'))?.cloverId ?? '')}
+            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-all duration-150 active:scale-95"
+            style={{ backgroundColor: "#1a3d0f", color: "#f5c842", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.08em" }}
+          >
+            SEE SPECIALS
+          </button>
+        </div>
+      )}
 
       {/* Items area */}
       <div className="container py-6">

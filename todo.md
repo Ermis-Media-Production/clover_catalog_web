@@ -169,3 +169,9 @@
 - [x] Magnifying glass (ZoomIn) icon overlay on photo hover to hint at lightbox feature
 - [x] Add to Cart button inside lightbox (skips to ModifierWizard if item has required modifiers)
 - [x] 8 appetizer photos uploaded to CDN and assigned to correct DB items
+
+## Three Suggested Improvements
+
+- [x] Lunch Specials time-based banner on menu page (10am–3pm)
+- [x] Show special instructions in admin orders panel
+- [x] Publish to casadepizzawingslv.com (guided user to click Publish button)
