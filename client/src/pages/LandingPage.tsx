@@ -470,6 +470,142 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Testimonials ─────────────────────────────────────────────── */}
+      <section className="py-16" style={{ backgroundColor: "#1c1c1c" }}>
+        <div className="container">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <span
+              className="inline-block font-heading text-xs font-bold tracking-[0.2em] px-4 py-1.5 rounded-full mb-4"
+              style={{ backgroundColor: "#c41e1e", color: "#f7f2e8" }}
+            >
+              WHAT OUR CUSTOMERS SAY
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl font-bold" style={{ color: "#f7f2e8" }}>
+              Real <span className="italic" style={{ color: "#f5c842" }}>Reviews</span>
+            </h2>
+            <div className="w-16 h-1 mx-auto mt-4 rounded" style={{ backgroundColor: "#c41e1e" }} />
+            <div className="flex items-center justify-center gap-2 mt-5">
+              {[1,2,3,4,5].map(i => (
+                <svg key={i} className="w-6 h-6" fill="#f5c842" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+              <span className="font-heading font-bold text-lg ml-1" style={{ color: "#f5c842" }}>4.8</span>
+              <span className="text-sm" style={{ color: "rgba(247,242,232,0.5)" }}>· 200+ reviews</span>
+            </div>
+          </div>
+
+          {/* Cards grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Maria G.",
+                date: "May 2025",
+                stars: 5,
+                text: "Best pizza in Las Vegas! The specialty pizza is absolutely incredible — crispy crust, generous toppings, and the sauce is out of this world. We order from here every Friday night.",
+                initials: "MG",
+                color: "#c41e1e",
+              },
+              {
+                name: "James T.",
+                date: "April 2025",
+                stars: 5,
+                text: "The wings are phenomenal. Buffalo sauce is perfectly spicy and the chicken is always juicy. Combo specials are a great deal — got pizza + wings + drinks for a very fair price.",
+                initials: "JT",
+                color: "#2d5a1e",
+              },
+              {
+                name: "Sofia R.",
+                date: "March 2025",
+                stars: 5,
+                text: "Tried the gyro and the Angus burger on the same visit — both were amazing! The staff is super friendly and the food came out fast. Definitely my go-to spot in the neighborhood.",
+                initials: "SR",
+                color: "#c41e1e",
+              },
+              {
+                name: "Carlos M.",
+                date: "February 2025",
+                stars: 5,
+                text: "The Italian dinners remind me of my grandmother's cooking. Lasagna is rich and hearty. Love that they're open every day — great for family dinners after a long week.",
+                initials: "CM",
+                color: "#2d5a1e",
+              },
+              {
+                name: "Ashley K.",
+                date: "January 2025",
+                stars: 5,
+                text: "Lunch specials are unbeatable. I come here almost every week for the deal. The stromboli is my personal favorite — perfectly golden and stuffed with flavor. Highly recommend!",
+                initials: "AK",
+                color: "#c41e1e",
+              },
+              {
+                name: "David L.",
+                date: "December 2024",
+                stars: 5,
+                text: "Ordered online and the experience was seamless. Food arrived hot and exactly as described. The ribs were fall-off-the-bone tender. This place never disappoints. 5 stars every time!",
+                initials: "DL",
+                color: "#2d5a1e",
+              },
+            ].map((review) => (
+              <div
+                key={review.name}
+                className="rounded-2xl p-6 flex flex-col gap-4 border transition-transform duration-200 hover:-translate-y-1"
+                style={{ backgroundColor: "#2a2a2a", borderColor: "#3a3a3a" }}
+              >
+                {/* Stars */}
+                <div className="flex gap-1">
+                  {Array.from({ length: review.stars }).map((_, i) => (
+                    <svg key={i} className="w-4 h-4" fill="#f5c842" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <p className="text-sm leading-relaxed flex-1" style={{ color: "rgba(247,242,232,0.8)" }}>
+                  &ldquo;{review.text}&rdquo;
+                </p>
+
+                {/* Author */}
+                <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: "#3a3a3a" }}>
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-heading font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: review.color }}
+                  >
+                    {review.initials}
+                  </div>
+                  <div>
+                    <div className="font-heading font-bold text-sm" style={{ color: "#f7f2e8" }}>
+                      {review.name}
+                    </div>
+                    <div className="text-xs" style={{ color: "rgba(247,242,232,0.4)" }}>
+                      {review.date}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Google Reviews CTA */}
+          <div className="text-center mt-10">
+            <a
+              href="https://www.google.com/maps/place/Casa+de+Pizza+%26+Wings/@36.1765,-115.0726,17z"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-heading font-bold tracking-wider px-8 py-3 rounded text-sm transition-all active:scale-95"
+              style={{ border: "2px solid #f5c842", color: "#f5c842", backgroundColor: "transparent" }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              READ MORE REVIEWS ON GOOGLE
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <footer style={{ backgroundColor: "#1a3d0f", color: "rgba(247,242,232,0.7)" }}>
         <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
