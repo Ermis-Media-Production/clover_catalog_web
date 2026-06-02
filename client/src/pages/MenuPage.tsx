@@ -1,9 +1,10 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import { ShoppingCart, Search, Package, X, ChevronLeft, Phone, MapPin } from "lucide-react";
+import { ShoppingCart, Search, Package, X, ChevronLeft, Phone, MapPin, ZoomIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { useCart } from "@/contexts/CartContext";
 import ModifierWizard from "@/components/ModifierWizard";
+import MenuLightbox, { LightboxItem } from "@/components/MenuLightbox";
 import { Link, useSearch } from "wouter";
 
 const LOGO_URL = "/manus-storage/casa_pizza_logo_a63e4fc6.jpg";
@@ -80,6 +81,7 @@ export default function MenuPage() {
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const [wizardItem, setWizardItem] = useState<MenuItem | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [lightboxState, setLightboxState] = useState<{ items: LightboxItem[]; index: number } | null>(null);
 
   const { data: categories = [], isLoading: catsLoading } = trpc.catalog.getCategories.useQuery();
   const { data: items = [], isLoading: itemsLoading, error: itemsError } = trpc.catalog.getItems.useQuery({
@@ -321,9 +323,29 @@ export default function MenuPage() {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {groupItems.map((item) => (
-                      <MenuItemCard key={item.cloverId} item={item} onCustomize={() => setWizardItem(item)} />
-                    ))}
+                    {groupItems.map((item, itemIdx) => {
+                      const sectionLightboxItems: LightboxItem[] = groupItems.map((gi) => ({
+                        cloverId: gi.cloverId,
+                        name: gi.name,
+                        imageUrl: gi.imageUrl,
+                        customImageUrl: gi.customImageUrl,
+                        price: gi.price ?? 0,
+                        description: gi.description,
+                        modifierGroups: gi.modifierGroups.map((mg) => ({
+                          id: mg.cloverId,
+                          name: mg.name,
+                          required: (mg.minRequired ?? 0) > 0,
+                        })),
+                      }));
+                      return (
+                        <MenuItemCard
+                          key={item.cloverId}
+                          item={item}
+                          onCustomize={() => setWizardItem(item)}
+                          onOpenLightbox={() => setLightboxState({ items: sectionLightboxItems, index: itemIdx })}
+                        />
+                      );
+                    })}
                   </div>
                 </section>
               ))}
@@ -333,11 +355,19 @@ export default function MenuPage() {
       </div>
 
       {wizardItem && <ModifierWizard item={wizardItem} onClose={() => setWizardItem(null)} />}
+      {lightboxState && (
+        <MenuLightbox
+          items={lightboxState.items}
+          currentIndex={lightboxState.index}
+          onClose={() => setLightboxState(null)}
+          onNavigate={(i) => setLightboxState((s) => (s ? { ...s, index: i } : null))}
+        />
+      )}
     </div>
   );
 }
 
-function MenuItemCard({ item, onCustomize }: { item: MenuItem; onCustomize: () => void }) {
+function MenuItemCard({ item, onCustomize, onOpenLightbox }: { item: MenuItem; onCustomize: () => void; onOpenLightbox: () => void }) {
   const { addItem, openCart } = useCart();
   const hasModifiers = item.modifierGroups.length > 0;
   const imgSrc = item.customImageUrl ?? item.imageUrl;
@@ -350,7 +380,13 @@ function MenuItemCard({ item, onCustomize }: { item: MenuItem; onCustomize: () =
   return (
     <div className="group rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
       style={{ backgroundColor: "#ffffff", border: "1.5px solid #e8e0d0" }}>
-      <div className="relative h-40 overflow-hidden" style={{ backgroundColor: "#f0ebe0" }}>
+      <div
+        className="relative h-40 overflow-hidden cursor-pointer"
+        style={{ backgroundColor: "#f0ebe0" }}
+        onClick={onOpenLightbox}
+        role="button"
+        aria-label={`View photo of ${item.name}`}
+      >
         {imgSrc ? (
           <img src={imgSrc} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
@@ -358,6 +394,18 @@ function MenuItemCard({ item, onCustomize }: { item: MenuItem; onCustomize: () =
             <Package className="w-10 h-10" style={{ color: "#d0c8b8" }} />
           </div>
         )}
+        {/* Magnifying glass overlay on hover */}
+        <div
+          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          style={{ backgroundColor: "rgba(0,0,0,0.28)" }}
+        >
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.18)", backdropFilter: "blur(2px)" }}
+          >
+            <ZoomIn className="w-5 h-5" style={{ color: "#fff" }} />
+          </div>
+        </div>
         {item.tags.length > 0 && (
           <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
             {item.tags.slice(0, 2).map((tag) => (

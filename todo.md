@@ -159,3 +159,13 @@
 - [x] Fallback: if no order data, show top 6 items from Clover catalog sorted by price (available items)
 - [x] LandingPage: "Most Popular" section with 6 item cards showing photo, name, price, and ORDER NOW button
 - [x] Item cards match brand style (green/red/cream) with hover effects and skeleton loading state
+
+## Menu Item Photo Lightbox
+
+- [x] Create MenuLightbox component: fullscreen photo, prev/next arrows, item name/description, Add to Cart button
+- [x] Keyboard navigation: ESC to close, arrow keys to navigate between items
+- [x] Click outside lightbox to close
+- [x] Wire lightbox into MenuPage: clicking item photo area opens lightbox with all items in that category section
+- [x] Magnifying glass (ZoomIn) icon overlay on photo hover to hint at lightbox feature
+- [x] Add to Cart button inside lightbox (skips to ModifierWizard if item has required modifiers)
+- [x] 8 appetizer photos uploaded to CDN and assigned to correct DB items
