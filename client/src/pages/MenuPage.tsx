@@ -15,7 +15,10 @@ function formatCents(cents: number | null | undefined): string {
 }
 
 const CATEGORY_ORDER = [
-  "appetizer", "soup", "salad", "specialty pizza", "wing", "finger",
+  "appetizer", "soup", "salad",
+  // Individual specialty pizza categories (#1-#16)
+  "#1", "#2", "# 3", "# 4", "# 5", "# 6", "# 7", "# 8", "#9", "#10", "#11", "# 12", "#13", "# 14", "#15", "# 16",
+  "wing", "finger", "chicken wing", "chicken finger",
   "stromboli", "calzone", "italian dinner", "rib", "gyro", "angus",
   "burger", "hot sandwich", "cold sandwich", "dessert", "drink", "beverage",
   "fountain", "lunch special", "combo",
@@ -23,7 +26,6 @@ const CATEGORY_ORDER = [
 
 // Categories to hide from the public menu (internal Clover categories)
 const HIDDEN_CATEGORY_PATTERNS = [
-  /^#\d+/,              // Individual pizza variants: #1 - Cheese Pizza, etc.
   /^delivery$/i,        // Internal delivery category
   /^employee meal$/i,   // Staff meal category
   /^sauces? dipping/i,  // Internal sauce category
@@ -31,16 +33,32 @@ const HIDDEN_CATEGORY_PATTERNS = [
   /^expo$/i,            // Expo station internal tag
   /^front desk$/i,      // Front desk internal category
   /^pizzeria$/i,        // Internal station label
+  /^specialty pizza$/i, // Empty parent category (items are in #1-#16 sub-cats)
+  /^wings & finger$/i,  // Duplicate of Chicken Wings + Chicken Fingers
 ];
 
 function isCategoryVisible(name: string): boolean {
   return !HIDDEN_CATEGORY_PATTERNS.some((pattern) => pattern.test(name.trim()));
 }
 
+// Display name override for individual pizza categories
+function catDisplayName(name: string): string {
+  // #1 - Cheese Pizza → "Cheese Pizza", # 3 - Vegetarian Pizza → "Vegetarian Pizza"
+  const m = name.match(/^#\s*\d+\s*[-–]?\s*(.+)$/i);
+  if (m) return m[1].trim();
+  return name;
+}
+
+// Group label for sidebar: individual pizza categories collapse under "Specialty Pizzas"
+function catGroupLabel(name: string): string {
+  if (/^#\s*\d+/i.test(name)) return "Specialty Pizzas";
+  return name;
+}
+
 function catSortKey(name: string): number {
   const lower = name.toLowerCase();
   for (let i = 0; i < CATEGORY_ORDER.length; i++) {
-    if (lower.includes(CATEGORY_ORDER[i])) return i;
+    if (lower.startsWith(CATEGORY_ORDER[i].toLowerCase()) || lower.includes(CATEGORY_ORDER[i].toLowerCase())) return i;
   }
   return 99;
 }
@@ -173,22 +191,66 @@ export default function MenuPage() {
           onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setActiveCatId(null); setMobileSidebarOpen(false); }}>
           All Items
         </button>
-        {sortedCategories.map((cat) => {
-          const isActive = activeCatId === cat.cloverId;
-          return (
-            <button
-              key={cat.cloverId}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-              style={{
-                backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
-                color: isActive ? "#f5c842" : "rgba(247,242,232,0.75)",
-                fontWeight: isActive ? 700 : 400,
-              }}
-              onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
-              {cat.name}
-            </button>
-          );
-        })}
+        {/* Group pizza categories under a collapsible "Specialty Pizzas" header */}
+        {(() => {
+          const rendered: React.ReactNode[] = [];
+          let pizzaGroup: typeof sortedCategories = [];
+          let pizzaHeaderAdded = false;
+
+          const flushPizzas = () => {
+            if (pizzaGroup.length === 0) return;
+            const anyActive = pizzaGroup.some((c) => activeCatId === c.cloverId);
+            rendered.push(
+              <div key="__pizza_group">
+                <div className="px-3 py-1.5 text-xs font-bold tracking-wider mt-1"
+                  style={{ color: anyActive ? "#f5c842" : "rgba(247,242,232,0.45)", fontFamily: "'Oswald', sans-serif" }}>
+                  SPECIALTY PIZZAS
+                </div>
+                {pizzaGroup.map((cat) => {
+                  const isActive = activeCatId === cat.cloverId;
+                  return (
+                    <button
+                      key={cat.cloverId}
+                      className="w-full text-left px-4 py-1.5 rounded-lg text-xs mb-0.5 transition-colors"
+                      style={{
+                        backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
+                        color: isActive ? "#f5c842" : "rgba(247,242,232,0.65)",
+                        fontWeight: isActive ? 700 : 400,
+                      }}
+                      onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
+                      {catDisplayName(cat.name)}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+            pizzaGroup = [];
+          };
+
+          for (const cat of sortedCategories) {
+            if (/^#\s*\d+/i.test(cat.name)) {
+              pizzaGroup.push(cat);
+            } else {
+              flushPizzas();
+              const isActive = activeCatId === cat.cloverId;
+              rendered.push(
+                <button
+                  key={cat.cloverId}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
+                  style={{
+                    backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
+                    color: isActive ? "#f5c842" : "rgba(247,242,232,0.75)",
+                    fontWeight: isActive ? 700 : 400,
+                  }}
+                  onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
+                  {cat.name}
+                </button>
+              );
+            }
+          }
+          flushPizzas();
+          return rendered;
+        })()}
       </div>
     </>
   );
@@ -315,7 +377,7 @@ export default function MenuPage() {
                   ref={(el) => { sectionRefs.current[catId] = el; }}>
                   <div className="flex items-center gap-3 mb-5 pb-3" style={{ borderBottom: "2px solid #2d5a1e" }}>
                     <h2 className="font-bold text-xl tracking-wide" style={{ color: "#2d5a1e", fontFamily: "'Oswald', sans-serif" }}>
-                      {catName.toUpperCase()}
+                      {catDisplayName(catName).toUpperCase()}
                     </h2>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                       style={{ backgroundColor: "rgba(45,90,30,0.1)", color: "#2d5a1e" }}>
