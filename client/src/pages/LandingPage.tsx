@@ -34,22 +34,22 @@ function getTodayStatus() {
 const TODAY_NAME = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
 
 const CATEGORIES = [
-  { id: "appetizers", num: "01", name: "Appetizers", desc: "Garlic bread, mozzarella sticks & daily specials" },
-  { id: "soups", num: "02", name: "Soups", desc: "Warm, hearty soups made fresh daily" },
-  { id: "house-salads", num: "03", name: "House Salads", desc: "Fresh salads with house dressings" },
-  { id: "specialty-pizzas", num: "04", name: "Specialty Pizzas", desc: "Bold toppings, house sauce, baked to perfection" },
-  { id: "wings-fingers", num: "05", name: "Wings & Fingers", desc: "Buffalo, BBQ, honey garlic and more" },
-  { id: "stromboli-calzone", num: "06", name: "Stromboli & Calzone", desc: "Golden baked Italian rolled favorites" },
-  { id: "italian-dinners", num: "07", name: "Italian Dinners", desc: "Lasagna, parmigiana, spaghetti & classics" },
-  { id: "ribs", num: "08", name: "Ribs", desc: "Slow-cooked, fall-off-the-bone BBQ ribs" },
-  { id: "gyro", num: "09", name: "Gyro", desc: "Seasoned meat, tzatziki & fresh veggies in pita" },
-  { id: "angus-burgers", num: "10", name: "100% Angus Burgers", desc: "Premium patties, juicy & stacked with fries" },
-  { id: "hot-sandwiches", num: "11", name: "Hot Sandwiches", desc: "Melted cheese & generous fillings on toasted bread" },
-  { id: "cold-sandwiches", num: "12", name: "Cold Sandwiches", desc: "Premium deli meats & fresh veggies" },
-  { id: "desserts", num: "13", name: "Desserts", desc: "Cannoli, tiramisu & sweet endings" },
-  { id: "drinks", num: "14", name: "Drinks", desc: "Sodas, juices & refreshing beverages" },
-  { id: "lunch-specials", num: "15", name: "Lunch Specials", desc: "Daily deals available 10AM–3PM" },
-  { id: "combo-specials", num: "16", name: "Combo Specials", desc: "Pizza, wings, sides & drinks bundled" },
+  { id: "appetizers", num: "01", name: "Appetizers", desc: "Garlic bread, mozzarella sticks & daily specials", img: "/manus-storage/cat_appetizers_9af80b68.jpg" },
+  { id: "soups", num: "02", name: "Soups", desc: "Warm, hearty soups made fresh daily", img: "/manus-storage/cat_soups_1748dddc.jpg" },
+  { id: "house-salads", num: "03", name: "House Salads", desc: "Fresh salads with house dressings", img: "/manus-storage/cat_house_salads_d106490e.jpg" },
+  { id: "specialty-pizzas", num: "04", name: "Specialty Pizzas", desc: "Bold toppings, house sauce, baked to perfection", img: "/manus-storage/cat_specialty_pizzas_63da53b5.jpg" },
+  { id: "wings-fingers", num: "05", name: "Wings & Fingers", desc: "Buffalo, BBQ, honey garlic and more", img: "/manus-storage/cat_wings_fingers_e7d7173b.jpg" },
+  { id: "stromboli-calzone", num: "06", name: "Stromboli & Calzone", desc: "Golden baked Italian rolled favorites", img: "/manus-storage/cat_stromboli_calzone_939bb559.jpg" },
+  { id: "italian-dinners", num: "07", name: "Italian Dinners", desc: "Lasagna, parmigiana, spaghetti & classics", img: "/manus-storage/cat_italian_dinners_0cd78bd4.jpg" },
+  { id: "ribs", num: "08", name: "Ribs", desc: "Slow-cooked, fall-off-the-bone BBQ ribs", img: "/manus-storage/cat_ribs_ac0233e9.jpg" },
+  { id: "gyro", num: "09", name: "Gyro", desc: "Seasoned meat, tzatziki & fresh veggies in pita", img: "/manus-storage/cat_gyro_116ff15a.jpg" },
+  { id: "angus-burgers", num: "10", name: "100% Angus Burgers", desc: "Premium patties, juicy & stacked with fries", img: "/manus-storage/cat_angus_burgers_d8a877a4.jpg" },
+  { id: "hot-sandwiches", num: "11", name: "Hot Sandwiches", desc: "Melted cheese & generous fillings on toasted bread", img: "/manus-storage/cat_hot_sandwiches_bdf44518.jpg" },
+  { id: "cold-sandwiches", num: "12", name: "Cold Sandwiches", desc: "Premium deli meats & fresh veggies", img: "/manus-storage/cat_cold_sandwiches_9e3d3514.jpg" },
+  { id: "desserts", num: "13", name: "Desserts", desc: "Cannoli, tiramisu & sweet endings", img: "/manus-storage/cat_desserts_2424e0f6.jpg" },
+  { id: "drinks", num: "14", name: "Drinks", desc: "Sodas, juices & refreshing beverages", img: "/manus-storage/cat_drinks_11639d07.jpg" },
+  { id: "lunch-specials", num: "15", name: "Lunch Specials", desc: "Daily deals available 10AM–3PM", img: "/manus-storage/cat_lunch_specials_2ae59a86.jpg" },
+  { id: "combo-specials", num: "16", name: "Combo Specials", desc: "Pizza, wings, sides & drinks bundled", img: "/manus-storage/cat_combo_specials_e70479ea.jpg" },
 ];
 
 export default function LandingPage() {
@@ -259,21 +259,31 @@ export default function LandingPage() {
             {CATEGORIES.map((cat) => (
               <Link key={cat.id} href={`/menu?category=${cat.id}`}>
                 <div
-                  className="group relative rounded-xl overflow-hidden border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
+                  className="group relative rounded-xl overflow-hidden border-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col"
                   style={{ borderColor: "#e8e0d0", backgroundColor: "#ffffff" }}
                 >
-                  {/* Number badge */}
-                  <div
-                    className="absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-heading font-bold z-10"
-                    style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
-                  >
-                    {cat.num}
+                  {/* Food photo */}
+                  <div className="relative h-32 overflow-hidden" style={{ backgroundColor: "#f0ebe0" }}>
+                    <img
+                      src={cat.img}
+                      alt={cat.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {/* Dark overlay on hover */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                    {/* Number badge */}
+                    <div
+                      className="absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-heading font-bold z-10 shadow-md"
+                      style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+                    >
+                      {cat.num}
+                    </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-5 pt-10">
+                  <div className="p-4 flex-1">
                     <h3
-                      className="font-heading font-bold text-sm tracking-wide leading-tight mb-1 group-hover:underline"
+                      className="font-heading font-bold text-sm tracking-wide leading-tight mb-1 group-hover:text-red-700 transition-colors"
                       style={{ color: "#1c1c1c" }}
                     >
                       {cat.name.toUpperCase()}
