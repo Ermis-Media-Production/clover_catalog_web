@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ShoppingCart, Search, Package, X, ChevronLeft, Phone, MapPin, ZoomIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
@@ -26,15 +26,15 @@ const CATEGORY_ORDER = [
 
 // Categories to hide from the public menu (internal Clover categories)
 const HIDDEN_CATEGORY_PATTERNS = [
-  /^delivery$/i,        // Internal delivery category
-  /^employee meal$/i,   // Staff meal category
-  /^sauces? dipping/i,  // Internal sauce category
-  /^all day special$/i, // Internal special category
-  /^expo$/i,            // Expo station internal tag
-  /^front desk$/i,      // Front desk internal category
-  /^pizzeria$/i,        // Internal station label
-  /^specialty pizza$/i, // Empty parent category (items are in #1-#16 sub-cats)
-  /^wings & finger$/i,  // Duplicate of Chicken Wings + Chicken Fingers
+  /^delivery$/i,
+  /^employee meal$/i,
+  /^sauces? dipping/i,
+  /^all day special$/i,
+  /^expo$/i,
+  /^front desk$/i,
+  /^pizzeria$/i,
+  /^specialty pizza$/i, // Empty parent category
+  /^wings & finger$/i,  // Duplicate
 ];
 
 function isCategoryVisible(name: string): boolean {
@@ -43,16 +43,37 @@ function isCategoryVisible(name: string): boolean {
 
 // Display name override for individual pizza categories
 function catDisplayName(name: string): string {
-  // #1 - Cheese Pizza → "Cheese Pizza", # 3 - Vegetarian Pizza → "Vegetarian Pizza"
   const m = name.match(/^#\s*\d+\s*[-–]?\s*(.+)$/i);
   if (m) return m[1].trim();
   return name;
 }
 
-// Group label for sidebar: individual pizza categories collapse under "Specialty Pizzas"
-function catGroupLabel(name: string): string {
-  if (/^#\s*\d+/i.test(name)) return "Specialty Pizzas";
-  return name;
+// Tab label: pizza categories get a short label
+function catTabLabel(name: string): string {
+  // "#1 - Cheese Pizza" → "Cheese"
+  const m = name.match(/^#\s*\d+\s*[-–]?\s*(.+)$/i);
+  if (m) {
+    const full = m[1].trim();
+    // Shorten long names
+    const words = full.replace(/ Pizza$/i, "").replace(/ Chicken$/i, "").trim();
+    return words.length > 14 ? words.slice(0, 13) + "…" : words;
+  }
+  // Shorten other long category names
+  const short: Record<string, string> = {
+    "appetizers & specialties": "Appetizers",
+    "100 % angus beef burguers": "Burgers",
+    "stromboli & calzone": "Stromboli",
+    "italian dinners": "Italian",
+    "house salads": "Salads",
+    "chicken wings": "Wings",
+    "chicken fingers": "Fingers",
+    "hot sandwiches": "Hot Sand.",
+    "cold sandwiches": "Cold Sand.",
+    "fountain drinks": "Fountain",
+    "lunch specials": "Lunch",
+    "combo specials": "Combos",
+  };
+  return short[name.toLowerCase()] ?? name;
 }
 
 function catSortKey(name: string): number {
@@ -93,13 +114,18 @@ type MenuItem = {
   modifierGroups: ModifierGroup[];
 };
 
+// Virtual tab for grouping all pizza categories
+const PIZZA_GROUP_ID = "__pizza_group";
+
 export default function MenuPage() {
   const searchParams = useSearch();
   const [search, setSearch] = useState("");
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
+  const [expandedPizzas, setExpandedPizzas] = useState(false);
   const [wizardItem, setWizardItem] = useState<MenuItem | null>(null);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [lightboxState, setLightboxState] = useState<{ items: LightboxItem[]; index: number } | null>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement | null>(null);
 
   const { data: categories = [], isLoading: catsLoading } = trpc.catalog.getCategories.useQuery();
   const { data: items = [], isLoading: itemsLoading, error: itemsError } = trpc.catalog.getItems.useQuery({
@@ -135,16 +161,39 @@ export default function MenuPage() {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const isLoading = catsLoading || itemsLoading;
 
+  // Pizza categories
+  const pizzaCats = useMemo(() => sortedCategories.filter((c) => /^#\s*\d+/i.test(c.name)), [sortedCategories]);
+  const nonPizzaCats = useMemo(() => sortedCategories.filter((c) => !/^#\s*\d+/i.test(c.name)), [sortedCategories]);
+  const activePizzaCat = useMemo(() => pizzaCats.find((c) => c.cloverId === activeCatId), [pizzaCats, activeCatId]);
+
   // Scroll to a category section by its Clover ID
+  // NAV_HEIGHT = top bar (32px) + header (60px) + tabs bar (48px) + 8px gap
+  const NAV_OFFSET = 148;
   const scrollToCategory = useCallback((catId: string) => {
     const el = sectionRefs.current[catId];
     if (el) {
-      const offset = 96; // account for sticky header
-      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      const top = el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
       window.scrollTo({ top, behavior: "smooth" });
       setActiveCatId(catId);
     }
   }, []);
+
+  // Auto-scroll active tab into view in the tabs bar
+  useEffect(() => {
+    if (activeTabRef.current && tabsRef.current) {
+      const tab = activeTabRef.current;
+      const bar = tabsRef.current;
+      const tabLeft = tab.offsetLeft;
+      const tabRight = tabLeft + tab.offsetWidth;
+      const barLeft = bar.scrollLeft;
+      const barRight = barLeft + bar.offsetWidth;
+      if (tabLeft < barLeft + 40) {
+        bar.scrollTo({ left: tabLeft - 40, behavior: "smooth" });
+      } else if (tabRight > barRight - 40) {
+        bar.scrollTo({ left: tabRight - bar.offsetWidth + 40, behavior: "smooth" });
+      }
+    }
+  }, [activeCatId]);
 
   // Handle ?category=slug from landing page links
   useEffect(() => {
@@ -155,7 +204,6 @@ export default function MenuPage() {
     const keyword = SLUG_TO_KEYWORD[slug] ?? slug.replace(/-/g, " ");
     const match = sortedCategories.find((c) => c.name.toLowerCase().includes(keyword));
     if (match) {
-      // Small delay to allow sections to render
       setTimeout(() => scrollToCategory(match.cloverId), 300);
     }
   }, [isLoading, sortedCategories, searchParams, scrollToCategory]);
@@ -163,13 +211,12 @@ export default function MenuPage() {
   // Track active category on scroll
   useEffect(() => {
     const handleScroll = () => {
-      const offset = 120;
       let current: string | null = null;
       for (const { catId } of grouped) {
         const el = sectionRefs.current[catId];
         if (el) {
           const rect = el.getBoundingClientRect();
-          if (rect.top <= offset) current = catId;
+          if (rect.top <= NAV_OFFSET + 20) current = catId;
         }
       }
       setActiveCatId(current);
@@ -178,82 +225,24 @@ export default function MenuPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [grouped]);
 
-  const SidebarContent = () => (
-    <>
-      <div className="px-4 py-3 text-xs font-bold tracking-[0.15em]"
-        style={{ color: "#f5c842", fontFamily: "'Oswald', sans-serif", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        CATEGORIES
-      </div>
-      <div className="p-2">
-        <button
-          className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold mb-0.5"
-          style={{ backgroundColor: !activeCatId ? "rgba(245,200,66,0.15)" : "transparent", color: !activeCatId ? "#f5c842" : "rgba(247,242,232,0.75)" }}
-          onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setActiveCatId(null); setMobileSidebarOpen(false); }}>
-          All Items
-        </button>
-        {/* Group pizza categories under a collapsible "Specialty Pizzas" header */}
-        {(() => {
-          const rendered: React.ReactNode[] = [];
-          let pizzaGroup: typeof sortedCategories = [];
-          let pizzaHeaderAdded = false;
+  // Build tab list: non-pizza cats + one "Specialty Pizzas" group tab
+  const tabs = useMemo(() => {
+    const result: { id: string; label: string; isPizzaGroup?: boolean }[] = [];
+    let pizzaInserted = false;
+    for (const cat of sortedCategories) {
+      if (/^#\s*\d+/i.test(cat.name)) {
+        if (!pizzaInserted) {
+          result.push({ id: PIZZA_GROUP_ID, label: "Specialty Pizzas", isPizzaGroup: true });
+          pizzaInserted = true;
+        }
+      } else {
+        result.push({ id: cat.cloverId, label: catTabLabel(cat.name) });
+      }
+    }
+    return result;
+  }, [sortedCategories]);
 
-          const flushPizzas = () => {
-            if (pizzaGroup.length === 0) return;
-            const anyActive = pizzaGroup.some((c) => activeCatId === c.cloverId);
-            rendered.push(
-              <div key="__pizza_group">
-                <div className="px-3 py-1.5 text-xs font-bold tracking-wider mt-1"
-                  style={{ color: anyActive ? "#f5c842" : "rgba(247,242,232,0.45)", fontFamily: "'Oswald', sans-serif" }}>
-                  SPECIALTY PIZZAS
-                </div>
-                {pizzaGroup.map((cat) => {
-                  const isActive = activeCatId === cat.cloverId;
-                  return (
-                    <button
-                      key={cat.cloverId}
-                      className="w-full text-left px-4 py-1.5 rounded-lg text-xs mb-0.5 transition-colors"
-                      style={{
-                        backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
-                        color: isActive ? "#f5c842" : "rgba(247,242,232,0.65)",
-                        fontWeight: isActive ? 700 : 400,
-                      }}
-                      onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
-                      {catDisplayName(cat.name)}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-            pizzaGroup = [];
-          };
-
-          for (const cat of sortedCategories) {
-            if (/^#\s*\d+/i.test(cat.name)) {
-              pizzaGroup.push(cat);
-            } else {
-              flushPizzas();
-              const isActive = activeCatId === cat.cloverId;
-              rendered.push(
-                <button
-                  key={cat.cloverId}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
-                  style={{
-                    backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
-                    color: isActive ? "#f5c842" : "rgba(247,242,232,0.75)",
-                    fontWeight: isActive ? 700 : 400,
-                  }}
-                  onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
-                  {cat.name}
-                </button>
-              );
-            }
-          }
-          flushPizzas();
-          return rendered;
-        })()}
-      </div>
-    </>
-  );
+  const isPizzaGroupActive = !!activePizzaCat;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f2e8" }}>
@@ -289,131 +278,170 @@ export default function MenuPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="lg:hidden px-3 py-1.5 rounded text-xs font-bold tracking-wider"
-            style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8", fontFamily: "'Oswald', sans-serif" }}
-            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}>
-            CATEGORIES
-          </button>
-          <button onClick={openCart} className="relative p-2 rounded-full hover:bg-gray-100" aria-label="Cart">
-            <ShoppingCart className="w-5 h-5" style={{ color: "#2d5a1e" }} />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-                style={{ backgroundColor: "#c41e1e" }}>{totalItems}</span>
-            )}
-          </button>
-        </div>
+        <button onClick={openCart} className="relative p-2 rounded-full hover:bg-gray-100" aria-label="Cart">
+          <ShoppingCart className="w-5 h-5" style={{ color: "#2d5a1e" }} />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+              style={{ backgroundColor: "#c41e1e" }}>{totalItems}</span>
+          )}
+        </button>
       </header>
 
-      {/* Mobile sidebar overlay */}
-      {mobileSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex" onClick={() => setMobileSidebarOpen(false)}>
-          <div className="w-72 h-full overflow-y-auto shadow-xl" style={{ backgroundColor: "#1a3d0f" }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="font-bold tracking-widest text-sm" style={{ color: "#f5c842", fontFamily: "'Oswald', sans-serif" }}>CATEGORIES</span>
-              <button onClick={() => setMobileSidebarOpen(false)} style={{ color: "#f7f2e8" }}><X className="w-5 h-5" /></button>
-            </div>
-            <SidebarContent />
-          </div>
+      {/* Sticky horizontal category tabs */}
+      <div className="sticky z-30" style={{ top: "63px", backgroundColor: "#1a3d0f", borderBottom: "2px solid #2d5a1e" }}>
+        <div
+          ref={tabsRef}
+          className="flex overflow-x-auto gap-1 px-3 py-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {tabs.map((tab) => {
+            const isActive = tab.isPizzaGroup ? isPizzaGroupActive : activeCatId === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={isActive ? activeTabRef : undefined}
+                onClick={() => {
+                  if (tab.isPizzaGroup) {
+                    setExpandedPizzas((v) => !v);
+                    // Scroll to first pizza section
+                    if (pizzaCats.length > 0) scrollToCategory(pizzaCats[0].cloverId);
+                  } else {
+                    scrollToCategory(tab.id);
+                  }
+                }}
+                className="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-150 active:scale-95"
+                style={{
+                  backgroundColor: isActive ? "#f5c842" : "rgba(255,255,255,0.08)",
+                  color: isActive ? "#1a3d0f" : "rgba(247,242,232,0.85)",
+                  fontFamily: "'Oswald', sans-serif",
+                  letterSpacing: "0.05em",
+                  border: isActive ? "none" : "1px solid rgba(255,255,255,0.12)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {tab.label}
+                {tab.isPizzaGroup && <span className="ml-1 opacity-70">{expandedPizzas ? "▲" : "▼"}</span>}
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        {/* Pizza sub-tabs (expanded) */}
+        {expandedPizzas && pizzaCats.length > 0 && (
+          <div
+            className="flex overflow-x-auto gap-1 px-3 pb-2"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", borderTop: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            {pizzaCats.map((cat) => {
+              const isActive = activeCatId === cat.cloverId;
+              return (
+                <button
+                  key={cat.cloverId}
+                  onClick={() => scrollToCategory(cat.cloverId)}
+                  className="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition-all duration-150 active:scale-95"
+                  style={{
+                    backgroundColor: isActive ? "#f5c842" : "rgba(255,255,255,0.05)",
+                    color: isActive ? "#1a3d0f" : "rgba(247,242,232,0.7)",
+                    border: isActive ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {catDisplayName(cat.name)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Hero */}
-      <div className="py-8 px-6" style={{ background: "linear-gradient(135deg, #1a3d0f 0%, #2d5a1e 60%, #3a7a28 100%)" }}>
+      <div className="py-6 px-6" style={{ background: "linear-gradient(135deg, #1a3d0f 0%, #2d5a1e 60%, #3a7a28 100%)" }}>
         <div className="container">
           <Link href="/" className="flex items-center gap-1 text-xs mb-2 hover:underline" style={{ color: "rgba(247,242,232,0.6)" }}>
             <ChevronLeft className="w-3 h-3" />Home
           </Link>
-          <h1 className="font-display font-bold text-3xl md:text-4xl" style={{ color: "#f7f2e8" }}>
-            Our <span className="italic" style={{ color: "#f5c842" }}>Menu</span>
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "rgba(247,242,232,0.75)" }}>Fresh ingredients, made to order. Customize your meal exactly how you like it.</p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="font-display font-bold text-3xl md:text-4xl" style={{ color: "#f7f2e8" }}>
+                Our <span className="italic" style={{ color: "#f5c842" }}>Menu</span>
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "rgba(247,242,232,0.75)" }}>Fresh ingredients, made to order.</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs" style={{ color: "rgba(247,242,232,0.7)" }}>
+              <a href="tel:+17022005252" className="flex items-center gap-1.5 hover:underline" style={{ color: "#f5c842" }}>
+                <Phone className="w-3.5 h-3.5" />(702) 200-5252
+              </a>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />765 N Nellis Blvd
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main layout */}
-      <div className="container py-6 flex gap-6">
-        {/* Desktop sidebar */}
-        <aside className="w-52 shrink-0 hidden lg:block self-start sticky top-24">
-          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "#1a3d0f" }}>
-            <SidebarContent />
+      {/* Items area */}
+      <div className="container py-6">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden animate-pulse" style={{ backgroundColor: "#e8e0d0", height: 260 }} />
+            ))}
           </div>
-          <div className="mt-4 rounded-2xl p-4 text-xs" style={{ backgroundColor: "#ffffff", border: "2px solid #e8e0d0" }}>
-            <div className="font-bold mb-2" style={{ color: "#1c1c1c", fontFamily: "'Oswald', sans-serif" }}>CALL TO ORDER</div>
-            <a href="tel:+17022005252" className="flex items-center gap-2 font-bold hover:underline" style={{ color: "#c41e1e" }}>
-              <Phone className="w-3.5 h-3.5 flex-shrink-0" />(702) 200-5252
-            </a>
-            <div className="flex items-center gap-2 mt-2" style={{ color: "#555" }}>
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />765 N Nellis Blvd
-            </div>
+        ) : itemsError ? (
+          <div className="text-center py-20" style={{ color: "#c41e1e" }}>
+            <p className="font-semibold">Failed to load menu. Please try again.</p>
           </div>
-        </aside>
-
-        {/* Items area */}
-        <div className="flex-1 min-w-0">
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden animate-pulse" style={{ backgroundColor: "#e8e0d0", height: 260 }} />
-              ))}
-            </div>
-          ) : itemsError ? (
-            <div className="text-center py-20" style={{ color: "#c41e1e" }}>
-              <p className="font-semibold">Failed to load menu. Please try again.</p>
-            </div>
-          ) : visibleItems.length === 0 ? (
-            <div className="text-center py-20" style={{ color: "#888" }}>
-              <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-semibold">No items found</p>
-              <p className="text-sm mt-1">Try a different search or category.</p>
-            </div>
-          ) : (
-            <div className="space-y-12">
-              {grouped.map(({ catId, catName, items: groupItems }) => (
-                <section
-                  key={catId}
-                  id={`cat-${catId}`}
-                  ref={(el) => { sectionRefs.current[catId] = el; }}>
-                  <div className="flex items-center gap-3 mb-5 pb-3" style={{ borderBottom: "2px solid #2d5a1e" }}>
-                    <h2 className="font-bold text-xl tracking-wide" style={{ color: "#2d5a1e", fontFamily: "'Oswald', sans-serif" }}>
-                      {catDisplayName(catName).toUpperCase()}
-                    </h2>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: "rgba(45,90,30,0.1)", color: "#2d5a1e" }}>
-                      {groupItems.length} items
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {groupItems.map((item, itemIdx) => {
-                      const sectionLightboxItems: LightboxItem[] = groupItems.map((gi) => ({
-                        cloverId: gi.cloverId,
-                        name: gi.name,
-                        imageUrl: gi.imageUrl,
-                        customImageUrl: gi.customImageUrl,
-                        price: gi.price ?? 0,
-                        description: gi.description,
-                        modifierGroups: gi.modifierGroups.map((mg) => ({
-                          id: mg.cloverId,
-                          name: mg.name,
-                          required: (mg.minRequired ?? 0) > 0,
-                        })),
-                      }));
-                      return (
-                        <MenuItemCard
-                          key={item.cloverId}
-                          item={item}
-                          onCustomize={() => setWizardItem(item)}
-                          onOpenLightbox={() => setLightboxState({ items: sectionLightboxItems, index: itemIdx })}
-                        />
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
-            </div>
-          )}
-        </div>
+        ) : visibleItems.length === 0 ? (
+          <div className="text-center py-20" style={{ color: "#888" }}>
+            <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <p className="text-lg font-semibold">No items found</p>
+            <p className="text-sm mt-1">Try a different search or category.</p>
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {grouped.map(({ catId, catName, items: groupItems }) => (
+              <section
+                key={catId}
+                id={`cat-${catId}`}
+                ref={(el) => { sectionRefs.current[catId] = el; }}>
+                <div className="flex items-center gap-3 mb-5 pb-3" style={{ borderBottom: "2px solid #2d5a1e" }}>
+                  <h2 className="font-bold text-xl tracking-wide" style={{ color: "#2d5a1e", fontFamily: "'Oswald', sans-serif" }}>
+                    {catDisplayName(catName).toUpperCase()}
+                  </h2>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "rgba(45,90,30,0.1)", color: "#2d5a1e" }}>
+                    {groupItems.length} items
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {groupItems.map((item, itemIdx) => {
+                    const sectionLightboxItems: LightboxItem[] = groupItems.map((gi) => ({
+                      cloverId: gi.cloverId,
+                      name: gi.name,
+                      imageUrl: gi.imageUrl,
+                      customImageUrl: gi.customImageUrl,
+                      price: gi.price ?? 0,
+                      description: gi.description,
+                      modifierGroups: gi.modifierGroups.map((mg) => ({
+                        id: mg.cloverId,
+                        name: mg.name,
+                        required: (mg.minRequired ?? 0) > 0,
+                      })),
+                    }));
+                    return (
+                      <MenuItemCard
+                        key={item.cloverId}
+                        item={item}
+                        onCustomize={() => setWizardItem(item)}
+                        onOpenLightbox={() => setLightboxState({ items: sectionLightboxItems, index: itemIdx })}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
 
       {wizardItem && <ModifierWizard item={wizardItem} onClose={() => setWizardItem(null)} />}
