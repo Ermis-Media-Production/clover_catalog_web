@@ -22,11 +22,14 @@ const CATEGORY_ORDER = [
 
 // Categories to hide from the public menu (internal Clover categories)
 const HIDDEN_CATEGORY_PATTERNS = [
-  /^#\d+/,          // Individual pizza variants: #1 - Cheese Pizza, etc.
-  /^delivery$/i,
-  /^employee meal$/i,
-  /^sauces dipping/i,
-  /^all day special$/i,
+  /^#\d+/,              // Individual pizza variants: #1 - Cheese Pizza, etc.
+  /^delivery$/i,        // Internal delivery category
+  /^employee meal$/i,   // Staff meal category
+  /^sauces? dipping/i,  // Internal sauce category
+  /^all day special$/i, // Internal special category
+  /^expo$/i,            // Expo station internal tag
+  /^front desk$/i,      // Front desk internal category
+  /^pizzeria$/i,        // Internal station label
 ];
 
 function isCategoryVisible(name: string): boolean {
