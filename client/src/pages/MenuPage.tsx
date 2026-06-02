@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { ShoppingCart, Search, Package, X, ChevronLeft, Phone, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
@@ -14,11 +14,24 @@ function formatCents(cents: number | null | undefined): string {
 }
 
 const CATEGORY_ORDER = [
-  "appetizer","soup","salad","specialty pizza","wing","finger",
-  "stromboli","calzone","italian dinner","rib","gyro","angus",
-  "burger","hot sandwich","cold sandwich","dessert","drink","beverage",
-  "lunch special","combo",
+  "appetizer", "soup", "salad", "specialty pizza", "wing", "finger",
+  "stromboli", "calzone", "italian dinner", "rib", "gyro", "angus",
+  "burger", "hot sandwich", "cold sandwich", "dessert", "drink", "beverage",
+  "fountain", "lunch special", "combo",
 ];
+
+// Categories to hide from the public menu (internal Clover categories)
+const HIDDEN_CATEGORY_PATTERNS = [
+  /^#\d+/,          // Individual pizza variants: #1 - Cheese Pizza, etc.
+  /^delivery$/i,
+  /^employee meal$/i,
+  /^sauces dipping/i,
+  /^all day special$/i,
+];
+
+function isCategoryVisible(name: string): boolean {
+  return !HIDDEN_CATEGORY_PATTERNS.some((pattern) => pattern.test(name.trim()));
+}
 
 function catSortKey(name: string): number {
   const lower = name.toLowerCase();
@@ -27,6 +40,26 @@ function catSortKey(name: string): number {
   }
   return 99;
 }
+
+// Map landing page slug → keyword to match against category names
+const SLUG_TO_KEYWORD: Record<string, string> = {
+  "appetizers": "appetizer",
+  "soups": "soup",
+  "house-salads": "salad",
+  "specialty-pizzas": "pizza",
+  "wings-fingers": "wing",
+  "stromboli-calzone": "stromboli",
+  "italian-dinners": "italian",
+  "ribs": "rib",
+  "gyro": "gyro",
+  "angus-burgers": "angus",
+  "hot-sandwiches": "hot sandwich",
+  "cold-sandwiches": "cold sandwich",
+  "desserts": "dessert",
+  "drinks": "drink",
+  "lunch-specials": "lunch",
+  "combo-specials": "combo",
+};
 
 type Modifier = { cloverId: string; name: string; price: number | null; available: boolean | null };
 type ModifierGroup = { cloverId: string; name: string; minRequired: number | null; maxAllowed: number | null; modifiers: Modifier[] };
@@ -41,13 +74,12 @@ type MenuItem = {
 export default function MenuPage() {
   const searchParams = useSearch();
   const [search, setSearch] = useState("");
-  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const [wizardItem, setWizardItem] = useState<MenuItem | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const { data: categories = [], isLoading: catsLoading } = trpc.catalog.getCategories.useQuery();
   const { data: items = [], isLoading: itemsLoading, error: itemsError } = trpc.catalog.getItems.useQuery({
-    categoryId: selectedCat ?? undefined,
     search: search || undefined,
   });
   const { totalItems, openCart } = useCart();
@@ -55,15 +87,13 @@ export default function MenuPage() {
   const visibleItems = useMemo(() => items.filter((i) => !i.hidden && i.available !== false), [items]);
 
   const sortedCategories = useMemo(
-    () => [...categories].sort((a, b) => catSortKey(a.name) - catSortKey(b.name)),
+    () => [...categories]
+      .filter((c) => isCategoryVisible(c.name))
+      .sort((a, b) => catSortKey(a.name) - catSortKey(b.name)),
     [categories]
   );
 
   const grouped = useMemo(() => {
-    if (selectedCat) {
-      const cat = categories.find((c) => c.cloverId === selectedCat);
-      return [{ catId: selectedCat, catName: cat?.name ?? "Category", items: visibleItems }];
-    }
     const catMap = new Map<string, MenuItem[]>();
     const uncategorized: MenuItem[] = [];
     for (const item of visibleItems) {
@@ -77,10 +107,86 @@ export default function MenuPage() {
     }
     if (uncategorized.length > 0) result.push({ catId: "__uncategorized", catName: "Other", items: uncategorized });
     return result;
-  }, [visibleItems, sortedCategories, categories, selectedCat]);
+  }, [visibleItems, sortedCategories]);
 
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const isLoading = catsLoading || itemsLoading;
+
+  // Scroll to a category section by its Clover ID
+  const scrollToCategory = useCallback((catId: string) => {
+    const el = sectionRefs.current[catId];
+    if (el) {
+      const offset = 96; // account for sticky header
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: "smooth" });
+      setActiveCatId(catId);
+    }
+  }, []);
+
+  // Handle ?category=slug from landing page links
+  useEffect(() => {
+    if (isLoading || sortedCategories.length === 0) return;
+    const params = new URLSearchParams(searchParams);
+    const slug = params.get("category");
+    if (!slug) return;
+    const keyword = SLUG_TO_KEYWORD[slug] ?? slug.replace(/-/g, " ");
+    const match = sortedCategories.find((c) => c.name.toLowerCase().includes(keyword));
+    if (match) {
+      // Small delay to allow sections to render
+      setTimeout(() => scrollToCategory(match.cloverId), 300);
+    }
+  }, [isLoading, sortedCategories, searchParams, scrollToCategory]);
+
+  // Track active category on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = 120;
+      let current: string | null = null;
+      for (const { catId } of grouped) {
+        const el = sectionRefs.current[catId];
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= offset) current = catId;
+        }
+      }
+      setActiveCatId(current);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [grouped]);
+
+  const SidebarContent = () => (
+    <>
+      <div className="px-4 py-3 text-xs font-bold tracking-[0.15em]"
+        style={{ color: "#f5c842", fontFamily: "'Oswald', sans-serif", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        CATEGORIES
+      </div>
+      <div className="p-2">
+        <button
+          className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold mb-0.5"
+          style={{ backgroundColor: !activeCatId ? "rgba(245,200,66,0.15)" : "transparent", color: !activeCatId ? "#f5c842" : "rgba(247,242,232,0.75)" }}
+          onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setActiveCatId(null); setMobileSidebarOpen(false); }}>
+          All Items
+        </button>
+        {sortedCategories.map((cat) => {
+          const isActive = activeCatId === cat.cloverId;
+          return (
+            <button
+              key={cat.cloverId}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5 transition-colors"
+              style={{
+                backgroundColor: isActive ? "rgba(245,200,66,0.15)" : "transparent",
+                color: isActive ? "#f5c842" : "rgba(247,242,232,0.75)",
+                fontWeight: isActive ? 700 : 400,
+              }}
+              onClick={() => { scrollToCategory(cat.cloverId); setMobileSidebarOpen(false); }}>
+              {cat.name}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f2e8" }}>
@@ -103,39 +209,45 @@ export default function MenuPage() {
         </Link>
         <div className="relative flex-1 max-w-xs mx-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "#999" }} />
-          <Input placeholder="Search menu…" value={search} onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 text-sm border-2" style={{ borderColor: "#d0c8b8", backgroundColor: "#faf7f0" }} />
-          {search && <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearch("")} style={{ color: "#999" }}><X className="w-3.5 h-3.5" /></button>}
+          <Input
+            placeholder="Search menu…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-9 text-sm border-2"
+            style={{ borderColor: "#d0c8b8", backgroundColor: "#faf7f0" }}
+          />
+          {search && (
+            <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearch("")} style={{ color: "#999" }}>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <button className="lg:hidden px-3 py-1.5 rounded text-xs font-bold tracking-wider"
+          <button
+            className="lg:hidden px-3 py-1.5 rounded text-xs font-bold tracking-wider"
             style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8", fontFamily: "'Oswald', sans-serif" }}
-            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}>CATEGORIES</button>
+            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}>
+            CATEGORIES
+          </button>
           <button onClick={openCart} className="relative p-2 rounded-full hover:bg-gray-100" aria-label="Cart">
             <ShoppingCart className="w-5 h-5" style={{ color: "#2d5a1e" }} />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: "#c41e1e" }}>{totalItems}</span>
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                style={{ backgroundColor: "#c41e1e" }}>{totalItems}</span>
             )}
           </button>
         </div>
       </header>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex" onClick={() => setMobileSidebarOpen(false)}>
-          <div className="w-72 h-full overflow-y-auto p-4 shadow-xl" style={{ backgroundColor: "#1a3d0f" }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="w-72 h-full overflow-y-auto shadow-xl" style={{ backgroundColor: "#1a3d0f" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3">
               <span className="font-bold tracking-widest text-sm" style={{ color: "#f5c842", fontFamily: "'Oswald', sans-serif" }}>CATEGORIES</span>
               <button onClick={() => setMobileSidebarOpen(false)} style={{ color: "#f7f2e8" }}><X className="w-5 h-5" /></button>
             </div>
-            <button className="w-full text-left px-3 py-2 rounded text-sm font-semibold mb-1"
-              style={{ backgroundColor: !selectedCat ? "rgba(245,200,66,0.15)" : "transparent", color: !selectedCat ? "#f5c842" : "rgba(247,242,232,0.8)" }}
-              onClick={() => { setSelectedCat(null); setMobileSidebarOpen(false); }}>All Items</button>
-            {sortedCategories.map((cat) => (
-              <button key={cat.cloverId} className="w-full text-left px-3 py-2 rounded text-sm mb-0.5"
-                style={{ backgroundColor: selectedCat === cat.cloverId ? "rgba(245,200,66,0.15)" : "transparent", color: selectedCat === cat.cloverId ? "#f5c842" : "rgba(247,242,232,0.8)", fontWeight: selectedCat === cat.cloverId ? 700 : 400 }}
-                onClick={() => { setSelectedCat(cat.cloverId); setMobileSidebarOpen(false); }}>{cat.name}</button>
-            ))}
+            <SidebarContent />
           </div>
         </div>
       )}
@@ -153,23 +265,12 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* Main layout */}
       <div className="container py-6 flex gap-6">
         {/* Desktop sidebar */}
         <aside className="w-52 shrink-0 hidden lg:block self-start sticky top-24">
           <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "#1a3d0f" }}>
-            <div className="px-4 py-3 text-xs font-bold tracking-[0.15em]"
-              style={{ color: "#f5c842", fontFamily: "'Oswald', sans-serif", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>CATEGORIES</div>
-            <div className="p-2">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold mb-0.5"
-                style={{ backgroundColor: !selectedCat ? "rgba(245,200,66,0.15)" : "transparent", color: !selectedCat ? "#f5c842" : "rgba(247,242,232,0.75)" }}
-                onClick={() => setSelectedCat(null)}>All Items</button>
-              {sortedCategories.map((cat) => (
-                <button key={cat.cloverId} className="w-full text-left px-3 py-2 rounded-lg text-sm mb-0.5"
-                  style={{ backgroundColor: selectedCat === cat.cloverId ? "rgba(245,200,66,0.15)" : "transparent", color: selectedCat === cat.cloverId ? "#f5c842" : "rgba(247,242,232,0.75)", fontWeight: selectedCat === cat.cloverId ? 700 : 400 }}
-                  onClick={() => setSelectedCat(cat.cloverId)}>{cat.name}</button>
-              ))}
-            </div>
+            <SidebarContent />
           </div>
           <div className="mt-4 rounded-2xl p-4 text-xs" style={{ backgroundColor: "#ffffff", border: "2px solid #e8e0d0" }}>
             <div className="font-bold mb-2" style={{ color: "#1c1c1c", fontFamily: "'Oswald', sans-serif" }}>CALL TO ORDER</div>
@@ -182,7 +283,7 @@ export default function MenuPage() {
           </div>
         </aside>
 
-        {/* Items */}
+        {/* Items area */}
         <div className="flex-1 min-w-0">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -203,10 +304,18 @@ export default function MenuPage() {
           ) : (
             <div className="space-y-12">
               {grouped.map(({ catId, catName, items: groupItems }) => (
-                <section key={catId} ref={(el) => { sectionRefs.current[catId] = el; }}>
+                <section
+                  key={catId}
+                  id={`cat-${catId}`}
+                  ref={(el) => { sectionRefs.current[catId] = el; }}>
                   <div className="flex items-center gap-3 mb-5 pb-3" style={{ borderBottom: "2px solid #2d5a1e" }}>
-                    <h2 className="font-bold text-xl tracking-wide" style={{ color: "#2d5a1e", fontFamily: "'Oswald', sans-serif" }}>{catName.toUpperCase()}</h2>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(45,90,30,0.1)", color: "#2d5a1e" }}>{groupItems.length} items</span>
+                    <h2 className="font-bold text-xl tracking-wide" style={{ color: "#2d5a1e", fontFamily: "'Oswald', sans-serif" }}>
+                      {catName.toUpperCase()}
+                    </h2>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ backgroundColor: "rgba(45,90,30,0.1)", color: "#2d5a1e" }}>
+                      {groupItems.length} items
+                    </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {groupItems.map((item) => (
@@ -242,7 +351,9 @@ function MenuItemCard({ item, onCustomize }: { item: MenuItem; onCustomize: () =
         {imgSrc ? (
           <img src={imgSrc} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center"><Package className="w-10 h-10" style={{ color: "#d0c8b8" }} /></div>
+          <div className="w-full h-full flex items-center justify-center">
+            <Package className="w-10 h-10" style={{ color: "#d0c8b8" }} />
+          </div>
         )}
         {item.tags.length > 0 && (
           <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
@@ -256,23 +367,35 @@ function MenuItemCard({ item, onCustomize }: { item: MenuItem; onCustomize: () =
       <div className="flex flex-col flex-1 p-4 gap-3">
         <div className="flex-1">
           <h3 className="font-semibold text-sm leading-snug" style={{ color: "#1c1c1c" }}>{item.name}</h3>
-          {item.description && <p className="text-xs mt-1 line-clamp-2 leading-relaxed" style={{ color: "#777" }}>{item.description}</p>}
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-bold text-base" style={{ color: "#2d5a1e" }}>{item.price ? formatCents(item.price) : "Market price"}</span>
-          {hasModifiers ? (
-            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-all active:scale-95"
-              style={{ backgroundColor: "#2d5a1e", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.05em" }}
-              onClick={onCustomize}><ShoppingCart className="w-3.5 h-3.5" />CUSTOMIZE</button>
-          ) : (
-            <button className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-              style={{ border: "2px solid #2d5a1e", color: "#2d5a1e", backgroundColor: "transparent", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.05em" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#2d5a1e"; (e.currentTarget as HTMLButtonElement).style.color = "#f7f2e8"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#2d5a1e"; }}
-              onClick={handleAddDirect}><ShoppingCart className="w-3.5 h-3.5" />ADD</button>
+          {item.description && (
+            <p className="text-xs mt-1 line-clamp-2 leading-relaxed" style={{ color: "#777" }}>{item.description}</p>
           )}
         </div>
-        {hasModifiers && <p className="text-[10px]" style={{ color: "#aaa" }}>{item.modifierGroups.length} customization option{item.modifierGroups.length > 1 ? "s" : ""} available</p>}
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-bold text-base" style={{ color: "#2d5a1e" }}>
+            {item.price ? formatCents(item.price) : "Market price"}
+          </span>
+          {hasModifiers ? (
+            <button
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-all active:scale-95"
+              style={{ backgroundColor: "#2d5a1e" }}
+              onClick={onCustomize}>
+              CUSTOMIZE
+            </button>
+          ) : (
+            <button
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-all active:scale-95"
+              style={{ backgroundColor: "#c41e1e" }}
+              onClick={handleAddDirect}>
+              ADD
+            </button>
+          )}
+        </div>
+        {hasModifiers && (
+          <p className="text-[10px]" style={{ color: "#aaa" }}>
+            {item.modifierGroups.length} customization option{item.modifierGroups.length !== 1 ? "s" : ""} available
+          </p>
+        )}
       </div>
     </div>
   );
