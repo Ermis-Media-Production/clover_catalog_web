@@ -46,8 +46,8 @@ function App() {
         <CartProvider>
           <TooltipProvider>
             <Toaster />
-            <CartDrawer />
             <Router />
+            <CartDrawer />
           </TooltipProvider>
         </CartProvider>
       </ThemeProvider>
