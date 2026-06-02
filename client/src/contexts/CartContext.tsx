@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, useState } from "react";
+import { createContext, useContext, useEffect, useReducer, useState, useCallback } from "react";
 
 export interface CartModifier {
   name: string;
@@ -91,6 +91,8 @@ interface CartContextValue {
   totalItems: number;
   totalCents: number;
   isOpen: boolean;
+  specialInstructions: string;
+  setSpecialInstructions: (value: string) => void;
   openCart: () => void;
   closeCart: () => void;
   addItem: (item: Omit<CartItem, "key">) => void;
@@ -105,6 +107,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [specialInstructions, setSpecialInstructionsState] = useState("");
+
+  const setSpecialInstructions = useCallback((value: string) => {
+    setSpecialInstructionsState(value);
+  }, []);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -137,12 +144,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalItems,
         totalCents,
         isOpen,
+        specialInstructions,
+        setSpecialInstructions,
         openCart: () => setIsOpen(true),
         closeCart: () => setIsOpen(false),
         addItem: (item) => dispatch({ type: "ADD", item }),
         removeItem: (key) => dispatch({ type: "REMOVE", key }),
         setQuantity: (key, quantity) => dispatch({ type: "SET_QTY", key, quantity }),
-        clearCart: () => dispatch({ type: "CLEAR" }),
+        clearCart: () => {
+          dispatch({ type: "CLEAR" });
+          setSpecialInstructionsState("");
+        },
       }}
     >
       {children}

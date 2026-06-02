@@ -56,7 +56,7 @@ interface AppliedCoupon {
 }
 
 export default function CheckoutPage() {
-  const { items, totalCents, clearCart } = useCart();
+  const { items, totalCents, clearCart, specialInstructions } = useCart();
   const [, navigate] = useLocation();
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
@@ -152,6 +152,7 @@ export default function CheckoutPage() {
         cardCode: data.cardCode,
       },
       couponCode: appliedCoupon?.code,
+      specialInstructions: specialInstructions.trim() || undefined,
     });
   };
 

@@ -50,6 +50,7 @@ export const checkoutRouter = router({
           cardCode: z.string().min(3).max(4),
         }),
         couponCode: z.string().max(64).optional(),
+        specialInstructions: z.string().max(300).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -113,7 +114,7 @@ export const checkoutRouter = router({
         //    We do NOT fail the checkout if Clover is unavailable — the payment
         //    already succeeded and the customer should get their confirmation.
         const customerName = `${input.customer.firstName} ${input.customer.lastName}`;
-        createCloverOrder(input.items, finalCents, reference, customerName)
+        createCloverOrder(input.items, finalCents, reference, customerName, input.specialInstructions)
           .then(({ cloverOrderId }) => {
             return saveCloverOrderId(orderId, cloverOrderId).catch((err) => {
               console.error(`[Clover] Failed to save cloverOrderId for order ${reference}:`, err);

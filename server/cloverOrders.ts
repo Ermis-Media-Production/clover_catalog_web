@@ -88,7 +88,8 @@ export async function createCloverOrder(
   items: CloverLineItemInput[],
   totalCents: number,
   reference: string,
-  customerName: string
+  customerName: string,
+  specialInstructions?: string
 ): Promise<CloverOrderResult> {
   const mId = merchantId();
 
@@ -131,7 +132,9 @@ export async function createCloverOrder(
   }
 
   // ── Step 2: Build orderCart ───────────────────────────────────────────────
-  const note = `Online order ${reference} — ${customerName}`;
+  const note = specialInstructions && specialInstructions.trim()
+    ? `Online order ${reference} — ${customerName} | Note: ${specialInstructions.trim()}`
+    : `Online order ${reference} — ${customerName}`;
 
   const orderCart: Record<string, unknown> = {
     lineItems,

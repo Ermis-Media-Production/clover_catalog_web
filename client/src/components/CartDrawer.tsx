@@ -1,6 +1,6 @@
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { X, Minus, Plus, ShoppingCart, Trash2, ArrowRight } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Trash2, ArrowRight, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 
 function formatCents(cents: number): string {
@@ -8,7 +8,7 @@ function formatCents(cents: number): string {
 }
 
 export default function CartDrawer() {
-  const { items, totalCents, totalItems, isOpen, closeCart, removeItem, setQuantity } = useCart();
+  const { items, totalCents, totalItems, isOpen, closeCart, removeItem, setQuantity, specialInstructions, setSpecialInstructions } = useCart();
   const [, navigate] = useLocation();
 
   const handleCheckout = () => {
@@ -118,7 +118,25 @@ export default function CartDrawer() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-border px-5 py-4 space-y-3">
+          <div className="border-t border-border px-5 py-4 space-y-4">
+            {/* Special Instructions */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Special Instructions
+              </label>
+              <textarea
+                value={specialInstructions}
+                onChange={(e) => setSpecialInstructions(e.target.value)}
+                placeholder="Allergies, extra napkins, no onions…"
+                rows={2}
+                maxLength={300}
+                className="w-full resize-none rounded-xl border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-150"
+              />
+              {specialInstructions.length > 0 && (
+                <p className="text-[10px] text-muted-foreground text-right">{specialInstructions.length}/300</p>
+              )}
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-sm">Total</span>
               <span className="font-bold text-xl text-foreground">{formatCents(totalCents)}</span>
