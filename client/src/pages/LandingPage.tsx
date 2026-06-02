@@ -430,7 +430,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Map embed */}
-                <div className="mt-4 w-full h-40 rounded-xl overflow-hidden border" style={{ borderColor: "#e8e0d0" }}>
+                <div className="mt-4 w-full h-56 rounded-xl overflow-hidden border" style={{ borderColor: "#e8e0d0" }}>
                   <iframe
                     title="Casa de Pizza & Wings location"
                     width="100%"
@@ -439,7 +439,7 @@ export default function LandingPage() {
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
-                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=765+N+Nellis+Blvd+Suite+10+Las+Vegas+NV+89110"
+                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAQkrWJ1doJ8yc2QQUGZZCbl_sNXn3SZTo&q=765+N+Nellis+Blvd+Suite+10+Las+Vegas+NV+89110"
                   />
                 </div>
               </div>
