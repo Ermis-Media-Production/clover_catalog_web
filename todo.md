@@ -153,3 +153,9 @@
 - [x] Redesign LandingPage: top bar, branded nav with logo, hero with food photo, stats bar, 16-category grid, lunch specials callout, hours/location section, footer
 - [x] Redesign MenuPage: branded nav with logo, dark green sidebar, category sort order matching restaurant categories, branded item cards with green/red accents
 - [x] All 39 tests still passing after redesign
+
+## Most Popular Section (Landing Page)
+- [x] tRPC procedure: catalog.getPopularItems — query order_items grouped by itemId, count frequency, join with clover_items for name/price/image
+- [x] Fallback: if no order data, show top 6 items from Clover catalog sorted by price (available items)
+- [x] LandingPage: "Most Popular" section with 6 item cards showing photo, name, price, and ORDER NOW button
+- [x] Item cards match brand style (green/red/cream) with hover effects and skeleton loading state

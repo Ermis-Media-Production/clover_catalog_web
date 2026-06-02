@@ -2,7 +2,7 @@
  * Catalog DB helpers — read-only queries for the admin dashboard.
  */
 
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, count, inArray } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   cloverCategories,
@@ -14,6 +14,7 @@ import {
   cloverModifiers,
   cloverTags,
   syncLogs,
+  orderItems,
 } from "../drizzle/schema";
 
 export async function getAllCategories() {
@@ -184,6 +185,62 @@ export async function getItemByCloverId(cloverId: string) {
     .where(eq(cloverItems.cloverId, cloverId))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Returns the most frequently ordered items (by order count).
+ * Falls back to the top `limit` available items by price if no order history exists.
+ */
+export async function getPopularItems(limit = 6) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Aggregate order_items by itemCloverId to find most ordered
+  const popularRows = await db
+    .select({
+      itemCloverId: orderItems.itemCloverId,
+      orderCount: count(orderItems.id).as("orderCount"),
+    })
+    .from(orderItems)
+    .groupBy(orderItems.itemCloverId)
+    .orderBy(desc(count(orderItems.id)))
+    .limit(limit * 4); // fetch extra to account for hidden/unavailable items
+
+  let popularCloverIds = popularRows.map((r) => r.itemCloverId);
+
+  // If no order history, fall back to top-priced available items
+  if (popularCloverIds.length === 0) {
+    const fallback = await db
+      .select({ cloverId: cloverItems.cloverId })
+      .from(cloverItems)
+      .where(eq(cloverItems.available, true))
+      .orderBy(desc(cloverItems.price))
+      .limit(limit * 4);
+    popularCloverIds = fallback.map((r) => r.cloverId);
+  }
+
+  if (popularCloverIds.length === 0) return [];
+
+  // Fetch full item details
+  const items = await db
+    .select()
+    .from(cloverItems)
+    .where(inArray(cloverItems.cloverId, popularCloverIds));
+
+  // Filter out hidden/unavailable, then sort by original popularity order
+  const visible = items.filter((i) => !i.hidden && i.available !== false);
+
+  // Sort by original popularity order
+  const orderMap = new Map(popularCloverIds.map((id, idx) => [id, idx]));
+  visible.sort((a, b) => (orderMap.get(a.cloverId) ?? 999) - (orderMap.get(b.cloverId) ?? 999));
+
+  return visible.slice(0, limit).map((item) => ({
+    cloverId: item.cloverId,
+    name: item.name,
+    price: item.price ?? 0,
+    description: item.description ?? null,
+    imageUrl: item.customImageUrl ?? item.imageUrl ?? null,
+  }));
 }
 
 export async function getSyncLogs(limit = 20) {

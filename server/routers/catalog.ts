@@ -12,6 +12,7 @@ import {
   getItemsWithAssociations,
   getSyncLogs,
   getLastSuccessfulSync,
+  getPopularItems,
 } from "../catalogDb";
 import { runCloverSyncWithLog } from "../cloverSync";
 import { createHeartbeatJob, deleteHeartbeatJob } from "../_core/heartbeat";
@@ -41,6 +42,11 @@ async function setSyncTaskUid(uid: string | null): Promise<void> {
 export const catalogRouter = router({
   /** List all categories */
   getCategories: publicProcedure.query(() => getAllCategories()),
+
+  /** Most popular items based on order frequency (with fallback to top-priced items) */
+  getPopularItems: publicProcedure
+    .input(z.object({ limit: z.number().min(1).max(12).default(6) }).optional())
+    .query(({ input }) => getPopularItems(input?.limit ?? 6)),
 
   /** List all tags */
   getTags: publicProcedure.query(() => getAllTags()),

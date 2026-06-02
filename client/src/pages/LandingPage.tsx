@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { useCart } from "@/contexts/CartContext";
-import { ShoppingCart, MapPin, Clock, Phone, ChevronRight, Star, Flame } from "lucide-react";
+import { ShoppingCart, MapPin, Clock, Phone, ChevronRight, Star, Flame, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
 const LOGO_URL = "/manus-storage/casa_pizza_logo_a63e4fc6.jpg";
 
@@ -52,9 +53,14 @@ const CATEGORIES = [
   { id: "combo-specials", num: "16", name: "Combo Specials", desc: "Pizza, wings, sides & drinks bundled", img: "/manus-storage/cat_combo_specials_e70479ea.jpg" },
 ];
 
+function formatCents(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 export default function LandingPage() {
-  const { totalItems, openCart } = useCart();
+  const { totalItems, openCart, addItem } = useCart();
   const status = getTodayStatus();
+  const { data: popularItems = [], isLoading: popularLoading, isError: popularError } = trpc.catalog.getPopularItems.useQuery({ limit: 6 });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f2e8", color: "#1c1c1c" }}>
@@ -466,6 +472,130 @@ export default function LandingPage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Most Popular ─────────────────────────────────────────────── */}
+      <section className="py-16" style={{ backgroundColor: "#f7f2e8" }}>
+        <div className="container">
+          <div className="text-center mb-12">
+            <span
+              className="inline-block font-heading text-xs font-bold tracking-[0.2em] px-4 py-1.5 rounded-full mb-4"
+              style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+            >
+              CUSTOMER FAVORITES
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl font-bold" style={{ color: "#1c1c1c" }}>
+              Most <span className="italic" style={{ color: "#c41e1e" }}>Popular</span>
+            </h2>
+            <div className="w-16 h-1 mx-auto mt-4 rounded" style={{ backgroundColor: "#2d5a1e" }} />
+            <p className="mt-4 text-base max-w-xl mx-auto" style={{ color: "#555" }}>
+              Our guests keep coming back for these. Order online and have them ready for pickup.
+            </p>
+          </div>
+
+          {popularLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden shadow-sm border animate-pulse" style={{ backgroundColor: "#fff", borderColor: "#e8e0d0" }}>
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : popularError || popularItems.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-base mb-6" style={{ color: "#777" }}>
+                {popularError ? "Could not load popular items at this time." : "Check out our full menu for all available dishes."}
+              </p>
+              <Link href="/menu">
+                <button
+                  className="font-heading font-bold tracking-wider px-10 py-3 rounded text-white text-sm transition-all active:scale-95 inline-flex items-center gap-2"
+                  style={{ backgroundColor: "#2d5a1e" }}
+                >
+                  VIEW FULL MENU
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {popularItems.map((item) => (
+                <div
+                  key={item.cloverId}
+                  className="group rounded-2xl overflow-hidden shadow-sm border flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+                  style={{ backgroundColor: "#fff", borderColor: "#e8e0d0" }}
+                >
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden bg-gray-100">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: "#f0ebe0" }}>
+                        <span className="text-5xl">🍕</span>
+                      </div>
+                    )}
+                    {/* Price badge */}
+                    <div
+                      className="absolute top-3 right-3 font-heading font-bold text-sm px-3 py-1 rounded-full shadow"
+                      style={{ backgroundColor: "#c41e1e", color: "#fff" }}
+                    >
+                      {formatCents(item.price)}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 flex-1 flex flex-col">
+                    <h3
+                      className="font-heading font-bold text-base tracking-wide leading-tight mb-1"
+                      style={{ color: "#1c1c1c" }}
+                    >
+                      {item.name}
+                    </h3>
+                    {item.description && (
+                      <p className="text-xs leading-relaxed flex-1 mb-3" style={{ color: "#777" }}>
+                        {item.description.length > 80 ? item.description.slice(0, 80) + "…" : item.description}
+                      </p>
+                    )}
+                    <Link href={`/menu`}>
+                      <button
+                        className="w-full font-heading font-bold tracking-wider py-2 rounded text-sm transition-all active:scale-95 flex items-center justify-center gap-2 mt-auto"
+                        style={{ backgroundColor: "#2d5a1e", color: "#f7f2e8" }}
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        ORDER NOW
+                      </button>
+                    </Link>
+                  </div>
+
+                  {/* Bottom accent */}
+                  <div
+                    className="h-1 w-0 group-hover:w-full transition-all duration-300"
+                    style={{ backgroundColor: "#c41e1e" }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-10">
+            <Link href="/menu">
+              <button
+                className="font-heading font-bold tracking-wider px-10 py-3 rounded text-white text-sm transition-all active:scale-95 inline-flex items-center gap-2"
+                style={{ backgroundColor: "#c41e1e" }}
+              >
+                SEE FULL MENU
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </Link>
           </div>
         </div>
       </section>
