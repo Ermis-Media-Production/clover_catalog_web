@@ -14,6 +14,11 @@ import { chargeCard } from "../authnet";
 import { validateCoupon, incrementCouponUsage } from "../couponDb";
 import { createCloverOrder } from "../cloverOrders";
 
+const CONVENIENCE_FEE_RATE = 0.03;
+function calcConvenienceFee(cents: number): number {
+  return Math.round(cents * CONVENIENCE_FEE_RATE);
+}
+
 const cartItemSchema = z.object({
   itemCloverId: z.string().min(1),
   itemName: z.string().min(1),
@@ -89,9 +94,13 @@ export const checkoutRouter = router({
         input.specialInstructions
       );
 
+      // Add 3% convenience fee (non-taxable) on top of the discounted subtotal
+      const convenienceFeeCents = calcConvenienceFee(finalCents);
+      const chargeAmountCents = finalCents + convenienceFeeCents;
+
       // 3. Charge the card via Authorize.net
       const chargeResult = await chargeCard({
-        amountCents: finalCents,
+        amountCents: chargeAmountCents,
         cardNumber: input.payment.cardNumber,
         expirationDate: input.payment.expirationDate,
         cardCode: input.payment.cardCode,
@@ -115,7 +124,7 @@ export const checkoutRouter = router({
         //    We do NOT fail the checkout if Clover is unavailable — the payment
         //    already succeeded and the customer should get their confirmation.
         const customerName = `${input.customer.firstName} ${input.customer.lastName}`;
-        createCloverOrder(input.items, finalCents, reference, customerName, input.specialInstructions, input.customer.phone)
+        createCloverOrder(input.items, chargeAmountCents, reference, customerName, input.specialInstructions, input.customer.phone)
           .then(({ cloverOrderId }) => {
             return saveCloverOrderId(orderId, cloverOrderId).catch((err) => {
               console.error(`[Clover] Failed to save cloverOrderId for order ${reference}:`, err);

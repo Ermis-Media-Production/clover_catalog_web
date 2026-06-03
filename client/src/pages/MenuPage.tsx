@@ -118,6 +118,25 @@ type MenuItem = {
 // Virtual tab for grouping all pizza categories
 const PIZZA_GROUP_ID = "__pizza_group";
 
+// Clover ID of the "Chicken Wings" category — all items replaced by a single virtual card
+const WINGS_CATEGORY_ID = "T6TTPWAF2PRYR";
+const WINGS_VIRTUAL_IMAGE = "/manus-storage/chicken_wings_40ea80c2.png";
+
+// Virtual item that represents the whole Wings category in the menu
+const WINGS_VIRTUAL_ITEM: MenuItem = {
+  cloverId: "__wings_virtual",
+  name: "Chicken Wings",
+  price: 999, // starting price (8 wings)
+  description: "Choose your size: 8, 12, 20 or 40 wings. Pick your flavor, dipping sauces and extras step by step.",
+  imageUrl: WINGS_VIRTUAL_IMAGE,
+  customImageUrl: null,
+  available: true,
+  hidden: false,
+  categoryIds: [WINGS_CATEGORY_ID],
+  tags: [],
+  modifierGroups: [],
+};
+
 export default function MenuPage() {
   const searchParams = useSearch();
   const [search, setSearch] = useState("");
@@ -149,10 +168,22 @@ export default function MenuPage() {
     const uncategorized: MenuItem[] = [];
     for (const item of visibleItems) {
       if (item.categoryIds.length === 0) { uncategorized.push(item); }
-      else { for (const cid of item.categoryIds) { if (!catMap.has(cid)) catMap.set(cid, []); catMap.get(cid)!.push(item); } }
+      else {
+        for (const cid of item.categoryIds) {
+          // Skip individual wings quantity items — replaced by single virtual card
+          if (cid === WINGS_CATEGORY_ID) continue;
+          if (!catMap.has(cid)) catMap.set(cid, []);
+          catMap.get(cid)!.push(item);
+        }
+      }
     }
     const result: { catId: string; catName: string; items: MenuItem[] }[] = [];
     for (const cat of sortedCategories) {
+      if (cat.cloverId === WINGS_CATEGORY_ID) {
+        // Show a single virtual card for the whole wings category
+        result.push({ catId: cat.cloverId, catName: cat.name, items: [WINGS_VIRTUAL_ITEM] });
+        continue;
+      }
       const its = catMap.get(cat.cloverId);
       if (its && its.length > 0) result.push({ catId: cat.cloverId, catName: cat.name, items: its });
     }
@@ -461,19 +492,27 @@ export default function MenuPage() {
                         required: (mg.minRequired ?? 0) > 0,
                       })),
                     }));
+                    const isVirtualWings = item.cloverId === "__wings_virtual";
                     return (
                       <MenuItemCard
                         key={item.cloverId}
                         item={item}
+                        isVirtualWings={isVirtualWings}
                         onCustomize={() => {
-                          // Wings items use the dedicated Wings Wizard
-                          if (/chicken wings/i.test(item.name)) {
+                          if (isVirtualWings || /chicken wings/i.test(item.name)) {
                             setShowWingsWizard(true);
                           } else {
                             setWizardItem(item);
                           }
                         }}
-                        onOpenLightbox={() => setLightboxState({ items: sectionLightboxItems, index: itemIdx })}
+                        onOpenLightbox={() => {
+                          // Virtual wings card opens wizard directly instead of lightbox
+                          if (isVirtualWings) {
+                            setShowWingsWizard(true);
+                          } else {
+                            setLightboxState({ items: sectionLightboxItems, index: itemIdx });
+                          }
+                        }}
                       />
                     );
                   })}
@@ -499,7 +538,7 @@ export default function MenuPage() {
   );
 }
 
-function MenuItemCard({ item, onCustomize, onOpenLightbox }: { item: MenuItem; onCustomize: () => void; onOpenLightbox: () => void }) {
+function MenuItemCard({ item, onCustomize, onOpenLightbox, isVirtualWings = false }: { item: MenuItem; onCustomize: () => void; onOpenLightbox: () => void; isVirtualWings?: boolean }) {
   const { addItem, openCart } = useCart();
   const hasModifiers = item.modifierGroups.length > 0;
   const imgSrc = item.customImageUrl ?? item.imageUrl;
@@ -558,7 +597,14 @@ function MenuItemCard({ item, onCustomize, onOpenLightbox }: { item: MenuItem; o
           <span className="font-bold text-base" style={{ color: "#2d5a1e" }}>
             {item.price ? formatCents(item.price) : "Market price"}
           </span>
-          {hasModifiers ? (
+          {isVirtualWings ? (
+            <button
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-all active:scale-95"
+              style={{ backgroundColor: "#c41e1e" }}
+              onClick={onCustomize}>
+              ORDER
+            </button>
+          ) : hasModifiers ? (
             <button
               className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-all active:scale-95"
               style={{ backgroundColor: "#2d5a1e" }}
@@ -574,7 +620,12 @@ function MenuItemCard({ item, onCustomize, onOpenLightbox }: { item: MenuItem; o
             </button>
           )}
         </div>
-        {hasModifiers && (
+        {isVirtualWings && (
+          <p className="text-[10px]" style={{ color: "#aaa" }}>
+            From $9.99 · 8, 12, 20 or 40 wings
+          </p>
+        )}
+        {!isVirtualWings && hasModifiers && (
           <p className="text-[10px]" style={{ color: "#aaa" }}>
             {item.modifierGroups.length} customization option{item.modifierGroups.length !== 1 ? "s" : ""} available
           </p>

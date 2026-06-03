@@ -8,7 +8,7 @@ function formatCents(cents: number): string {
 }
 
 export default function CartDrawer() {
-  const { items, totalCents, totalItems, isOpen, closeCart, removeItem, setQuantity, specialInstructions, setSpecialInstructions } = useCart();
+  const { items, totalCents, convenienceFeeCents, grandTotalCents, totalItems, isOpen, closeCart, removeItem, setQuantity, specialInstructions, setSpecialInstructions } = useCart();
   const [, navigate] = useLocation();
 
   const handleCheckout = () => {
@@ -137,9 +137,19 @@ export default function CartDrawer() {
                 <p className="text-[10px] text-muted-foreground text-right">{specialInstructions.length}/300</p>
               )}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Total</span>
-              <span className="font-bold text-xl text-foreground">{formatCents(totalCents)}</span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-foreground">{formatCents(totalCents)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Convenience fee (3%)</span>
+                <span className="text-foreground">{formatCents(convenienceFeeCents)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1.5 border-t border-border">
+                <span className="font-medium text-foreground text-sm">Total</span>
+                <span className="font-bold text-xl text-foreground">{formatCents(grandTotalCents)}</span>
+              </div>
             </div>
             <Button className="w-full gap-2" size="lg" onClick={handleCheckout}>
               Checkout <ArrowRight className="w-4 h-4" />

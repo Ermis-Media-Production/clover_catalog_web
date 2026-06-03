@@ -56,7 +56,7 @@ interface AppliedCoupon {
 }
 
 export default function CheckoutPage() {
-  const { items, totalCents, clearCart, specialInstructions } = useCart();
+  const { items, totalCents, convenienceFeeCents, grandTotalCents, clearCart, specialInstructions } = useCart();
   const [, navigate] = useLocation();
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
@@ -127,8 +127,11 @@ export default function CheckoutPage() {
     );
   }
 
-  const finalTotal = appliedCoupon ? appliedCoupon.finalCents : totalCents;
+  const subtotalAfterDiscount = appliedCoupon ? appliedCoupon.finalCents : totalCents;
   const discountAmount = appliedCoupon ? appliedCoupon.discountCents : 0;
+  // Convenience fee is always calculated on the cart subtotal (before coupon)
+  // so the fee doesn't change when a coupon is applied
+  const finalTotal = subtotalAfterDiscount + convenienceFeeCents;
 
   const onSubmit = (data: CheckoutForm) => {
     setPaymentError(null);
@@ -399,6 +402,10 @@ export default function CheckoutPage() {
                       <span>−{formatCents(discountAmount)}</span>
                     </div>
                   )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Convenience fee (3%)</span>
+                    <span>{formatCents(convenienceFeeCents)}</span>
+                  </div>
                   <div className="flex justify-between items-center pt-1 border-t border-border">
                     <span className="text-muted-foreground text-sm font-medium">Total</span>
                     <span className="font-bold text-2xl text-foreground">{formatCents(finalTotal)}</span>
@@ -419,7 +426,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />
-                      Pay {formatCents(finalTotal)}
+                      Pay {formatCents(finalTotal)} (incl. 3% fee)
                     </>
                   )}
                 </Button>

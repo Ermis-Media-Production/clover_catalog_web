@@ -86,10 +86,20 @@ function loadFromStorage(): CartItem[] {
   }
 }
 
+export const CONVENIENCE_FEE_RATE = 0.03; // 3% non-taxable
+export function calcConvenienceFee(subtotalCents: number): number {
+  return Math.round(subtotalCents * CONVENIENCE_FEE_RATE);
+}
+
 interface CartContextValue {
   items: CartItem[];
   totalItems: number;
+  /** Subtotal before convenience fee */
   totalCents: number;
+  /** 3% convenience fee in cents (non-taxable) */
+  convenienceFeeCents: number;
+  /** Grand total including convenience fee */
+  grandTotalCents: number;
   isOpen: boolean;
   specialInstructions: string;
   setSpecialInstructions: (value: string) => void;
@@ -136,6 +146,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       i.modifiers.reduce((ms, m) => ms + m.priceCents, 0) * i.quantity,
     0
   );
+  const convenienceFeeCents = calcConvenienceFee(totalCents);
+  const grandTotalCents = totalCents + convenienceFeeCents;
 
   return (
     <CartContext.Provider
@@ -143,6 +155,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         items: state.items,
         totalItems,
         totalCents,
+        convenienceFeeCents,
+        grandTotalCents,
         isOpen,
         specialInstructions,
         setSpecialInstructions,
