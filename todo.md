@@ -175,3 +175,16 @@
 - [x] Lunch Specials time-based banner on menu page (10am–3pm)
 - [x] Show special instructions in admin orders panel
 - [x] Publish to casadepizzawingslv.com (guided user to click Publish button)
+
+## Wings Wizard (Interactive Step-by-Step Ordering)
+
+- [x] Create WingsWizard component at client/src/components/WingsWizard.tsx
+- [x] Step 1: Quantity selector (8/$9.99, 12/$14.99, 20/$26.99, 40/$49.99) with visual cards
+- [x] Step 2: Cooking style selector (Regular, Extra Crispy, Well Done, Plain)
+- [x] Step 3: Flavor selector - single flavor OR Half & Half (only for 12+ wings); all 15 sauces with spice level chile icons
+- [x] Step 4: Included dipping sauces (1 free for 8, 2 for 12, 3 for 20, 4 for 30, 5 for 40); show sauce list with spice icons
+- [x] Step 5: Extra sauces add-on (optional, $1-$2 each) with spice icons
+- [x] Assign spice level icons (chile peppers) to each sauce based on heat level
+- [x] Wire WingsWizard to open when clicking any wings item card in MenuPage (replaces ModifierWizard for wings)
+- [x] Add wizard selection to cart as a single line item with all modifiers
+- [x] Send all modifiers to Clover POS order note

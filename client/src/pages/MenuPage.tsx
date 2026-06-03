@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useCart } from "@/contexts/CartContext";
 import ModifierWizard from "@/components/ModifierWizard";
 import MenuLightbox, { LightboxItem } from "@/components/MenuLightbox";
+import WingsWizard from "@/components/WingsWizard";
 import { Link, useSearch } from "wouter";
 
 const LOGO_URL = "/manus-storage/casa_pizza_logo_a63e4fc6.jpg";
@@ -123,6 +124,7 @@ export default function MenuPage() {
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const [expandedPizzas, setExpandedPizzas] = useState(false);
   const [wizardItem, setWizardItem] = useState<MenuItem | null>(null);
+  const [showWingsWizard, setShowWingsWizard] = useState(false);
   const [lightboxState, setLightboxState] = useState<{ items: LightboxItem[]; index: number } | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement | null>(null);
@@ -463,7 +465,14 @@ export default function MenuPage() {
                       <MenuItemCard
                         key={item.cloverId}
                         item={item}
-                        onCustomize={() => setWizardItem(item)}
+                        onCustomize={() => {
+                          // Wings items use the dedicated Wings Wizard
+                          if (/chicken wings/i.test(item.name)) {
+                            setShowWingsWizard(true);
+                          } else {
+                            setWizardItem(item);
+                          }
+                        }}
                         onOpenLightbox={() => setLightboxState({ items: sectionLightboxItems, index: itemIdx })}
                       />
                     );
@@ -476,12 +485,14 @@ export default function MenuPage() {
       </div>
 
       {wizardItem && <ModifierWizard item={wizardItem} onClose={() => setWizardItem(null)} />}
+      {showWingsWizard && <WingsWizard onClose={() => setShowWingsWizard(false)} />}
       {lightboxState && (
         <MenuLightbox
           items={lightboxState.items}
           currentIndex={lightboxState.index}
           onClose={() => setLightboxState(null)}
           onNavigate={(i) => setLightboxState((s) => (s ? { ...s, index: i } : null))}
+          onOpenWingsWizard={() => { setLightboxState(null); setShowWingsWizard(true); }}
         />
       )}
     </div>

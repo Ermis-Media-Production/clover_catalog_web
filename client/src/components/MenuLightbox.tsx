@@ -18,13 +18,14 @@ interface MenuLightboxProps {
   currentIndex: number;
   onClose: () => void;
   onNavigate: (index: number) => void;
+  onOpenWingsWizard?: () => void;
 }
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default function MenuLightbox({ items, currentIndex, onClose, onNavigate }: MenuLightboxProps) {
+export default function MenuLightbox({ items, currentIndex, onClose, onNavigate, onOpenWingsWizard }: MenuLightboxProps) {
   const { addItem } = useCart();
   const item = items[currentIndex];
   const hasPrev = currentIndex > 0;
@@ -58,6 +59,12 @@ export default function MenuLightbox({ items, currentIndex, onClose, onNavigate 
 
   const handleAddToCart = () => {
     if (!item) return;
+    // Wings items open the Wings Wizard
+    if (/chicken wings/i.test(item.name) && onOpenWingsWizard) {
+      onClose();
+      onOpenWingsWizard();
+      return;
+    }
     const hasRequired = item.modifierGroups?.some((g) => g.required);
     if (hasRequired) {
       onClose();
