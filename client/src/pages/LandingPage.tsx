@@ -724,7 +724,7 @@ export default function LandingPage() {
           {/* Google Reviews CTA */}
           <div className="text-center mt-10">
             <a
-              href="https://www.google.com/maps/place/Casa+de+Pizza+%26+Wings/@36.1765,-115.0726,17z"
+              href="https://www.google.com/maps/place/?q=place_id:ChIJU4k4Jp0d3IAR-9J2f8xU7pM"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 font-heading font-bold tracking-wider px-8 py-3 rounded text-sm transition-all active:scale-95"
