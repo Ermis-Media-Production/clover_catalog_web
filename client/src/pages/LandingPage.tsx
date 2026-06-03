@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useCart } from "@/contexts/CartContext";
+import { MapView } from "@/components/Map";
 import { ShoppingCart, MapPin, Clock, Phone, ChevronRight, Star, Flame, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
@@ -435,17 +436,19 @@ export default function LandingPage() {
                   </a>
                 </div>
 
-                {/* Map embed */}
-                <div className="mt-4 w-full h-56 rounded-xl overflow-hidden border" style={{ borderColor: "#e8e0d0" }}>
-                  <iframe
-                    title="Casa de Pizza & Wings location"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAQkrWJ1doJ8yc2QQUGZZCbl_sNXn3SZTo&q=765+N+Nellis+Blvd+Suite+10+Las+Vegas+NV+89110"
+                {/* Map — Manus proxy, no external API key needed */}
+                <div className="mt-4 w-full rounded-xl overflow-hidden border" style={{ borderColor: "#e8e0d0" }}>
+                  <MapView
+                    className="w-full h-56"
+                    initialCenter={{ lat: 36.1765, lng: -115.0726 }}
+                    initialZoom={16}
+                    onMapReady={(map) => {
+                      new window.google.maps.marker.AdvancedMarkerElement({
+                        map,
+                        position: { lat: 36.1765, lng: -115.0726 },
+                        title: "Casa de Pizza & Wings",
+                      });
+                    }}
                   />
                 </div>
               </div>
