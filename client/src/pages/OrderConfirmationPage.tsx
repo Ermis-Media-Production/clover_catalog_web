@@ -1,5 +1,5 @@
 import { Link, useParams } from "wouter";
-import { CheckCircle2, Package, Mail, Hash, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Package, Mail, Hash, ArrowRight, Loader2, AlertCircle, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 
@@ -47,6 +47,39 @@ export default function OrderConfirmationPage() {
           <h1 className="text-2xl font-bold text-foreground">Order Confirmed!</h1>
           <p className="text-muted-foreground text-sm">
             Thank you, {order.customerFirstName}. Your payment was processed successfully.
+          </p>
+        </div>
+
+        {/* Pickup reminder banner */}
+        <div className="rounded-2xl border-2 border-amber-500/60 bg-amber-50 dark:bg-amber-950/30 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h2 className="font-bold text-amber-800 dark:text-amber-300 text-base">
+              Recoge tu orden en el local
+            </h2>
+          </div>
+          <p className="text-amber-700 dark:text-amber-400 text-sm leading-relaxed">
+            Tu pedido ha sido enviado a nuestra cocina. Por favor recógelo en:
+          </p>
+          <div className="rounded-xl bg-white/70 dark:bg-black/20 border border-amber-200 dark:border-amber-800 px-4 py-3 space-y-2">
+            <div className="flex items-start gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-900 dark:text-amber-200">Casa de Pizza &amp; Wings</p>
+                <p className="text-amber-700 dark:text-amber-400">765 N Nellis Blvd, Las Vegas, NV 89110</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <p className="text-amber-700 dark:text-amber-400">
+                Horario: <span className="font-semibold">Lun – Dom, 10:00 AM – 10:00 PM</span>
+              </p>
+            </div>
+          </div>
+          <p className="text-amber-600 dark:text-amber-500 text-xs text-center">
+            Muestra tu número de orden <span className="font-mono font-bold">{order.reference}</span> al recoger.
           </p>
         </div>
 
