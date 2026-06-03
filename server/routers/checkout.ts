@@ -115,7 +115,7 @@ export const checkoutRouter = router({
         //    We do NOT fail the checkout if Clover is unavailable — the payment
         //    already succeeded and the customer should get their confirmation.
         const customerName = `${input.customer.firstName} ${input.customer.lastName}`;
-        createCloverOrder(input.items, finalCents, reference, customerName, input.specialInstructions)
+        createCloverOrder(input.items, finalCents, reference, customerName, input.specialInstructions, input.customer.phone)
           .then(({ cloverOrderId }) => {
             return saveCloverOrderId(orderId, cloverOrderId).catch((err) => {
               console.error(`[Clover] Failed to save cloverOrderId for order ${reference}:`, err);

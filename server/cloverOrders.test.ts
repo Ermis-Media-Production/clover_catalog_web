@@ -100,6 +100,8 @@ describe("createCloverOrder — atomic order flow", () => {
     expect(body.orderCart.lineItems).toBeDefined();
     expect(body.orderCart.note).toContain("ORD-003");
     expect(body.orderCart.note).toContain("Test User");
+    expect(body.orderCart.note).toContain("casadepizzawingslv.com");
+    expect(body.orderCart.note).toContain("ONLINE ORDER");
     expect(body.orderCart.total).toBe(5000);
     expect(body.orderCart.orderType).toEqual({ id: "ORDER_TYPE_001" });
     expect(body.orderCart.employee).toEqual({ id: "EMP_001" });

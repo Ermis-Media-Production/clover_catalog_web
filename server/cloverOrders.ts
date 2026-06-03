@@ -89,7 +89,8 @@ export async function createCloverOrder(
   totalCents: number,
   reference: string,
   customerName: string,
-  specialInstructions?: string
+  specialInstructions?: string,
+  customerPhone?: string
 ): Promise<CloverOrderResult> {
   const mId = merchantId();
 
@@ -132,9 +133,19 @@ export async function createCloverOrder(
   }
 
   // ── Step 2: Build orderCart ───────────────────────────────────────────────
-  const note = specialInstructions && specialInstructions.trim()
-    ? `Online order ${reference} — ${customerName} | Note: ${specialInstructions.trim()}`
-    : `Online order ${reference} — ${customerName}`;
+  // Build a rich note so kitchen staff can immediately identify web orders
+  const noteParts: string[] = [
+    `🌐 ONLINE ORDER — casadepizzawingslv.com`,
+    `Ref: ${reference}`,
+    `Cliente: ${customerName}`,
+  ];
+  if (customerPhone && customerPhone.trim()) {
+    noteParts.push(`Tel: ${customerPhone.trim()}`);
+  }
+  if (specialInstructions && specialInstructions.trim()) {
+    noteParts.push(`Nota: ${specialInstructions.trim()}`);
+  }
+  const note = noteParts.join(" | ");
 
   const orderCart: Record<string, unknown> = {
     lineItems,
