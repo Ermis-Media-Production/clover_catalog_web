@@ -29,6 +29,8 @@ const cartItemSchema = z.object({
       z.object({
         name: z.string(),
         priceCents: z.number().int().min(0),
+        /** Real Clover modifier ID — links to catalog modifier on receipts */
+        cloverId: z.string().optional(),
       })
     )
     .optional(),

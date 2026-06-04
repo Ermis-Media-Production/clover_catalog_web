@@ -20,44 +20,50 @@ const QUANTITY_OPTIONS = [
   { qty: 40, label: "40 Wings", price: 4999, cloverId: "M0J1THFXQSKM4" },
 ];
 
-// Cooking styles
-const COOKING_STYLES = ["Regular", "Extra Crispy", "Well Done", "Plain"];
-
-// Spice levels: 0=no heat, 1=mild, 2=medium, 3=hot, 4=very hot
-const SAUCES: { name: string; spice: number }[] = [
-  { name: "Plain",           spice: 0 },
-  { name: "Ranch",           spice: 0 },
-  { name: "Blue Cheese",     spice: 0 },
-  { name: "BBQ",             spice: 0 },
-  { name: "Teriyaki",        spice: 0 },
-  { name: "Lemon Pepper",    spice: 0 },
-  { name: "Lemon Garlic",    spice: 0 },
-  { name: "Garlic Parmesan", spice: 0 },
-  { name: "Mild",            spice: 1 },
-  { name: "Medium",          spice: 2 },
-  { name: "Spicy Honey BBQ", spice: 2 },
-  { name: "Spicy Teriyaki",  spice: 2 },
-  { name: "Hot",             spice: 3 },
-  { name: "Half And Half",   spice: 1 },
-  { name: "Mango Habanero",  spice: 4 },
+// Cooking styles — linked to Clover modifier group "Terms For Fingers/Wings" (NRHMYG9N3PF9G)
+const COOKING_STYLES: { name: string; cloverId: string }[] = [
+  { name: "Regular",      cloverId: "H36BPAN9Y0CQJ" },
+  { name: "Extra Crispy", cloverId: "6P4SD2WE5PNTY" },
+  { name: "Well Done",    cloverId: "187JDPTMBKTEJ" },
+  { name: "Plain",        cloverId: "A20594TR15S7P" },
 ];
 
-// Extra sauces with prices (cents)
-const EXTRA_SAUCES: { name: string; price: number; spice: number }[] = [
-  { name: "BBQ",             price: 200, spice: 0 },
-  { name: "Blue Cheese",     price: 200, spice: 0 },
-  { name: "Garlic Parmesan", price: 200, spice: 0 },
-  { name: "Teriyaki",        price: 200, spice: 0 },
-  { name: "Lemon Pepper",    price: 200, spice: 0 },
-  { name: "Lemon Garlic",    price: 200, spice: 0 },
-  { name: "Ranch 2oz",       price: 100, spice: 0 },
-  { name: "Ranch 4oz",       price: 200, spice: 0 },
-  { name: "Mild",            price: 200, spice: 1 },
-  { name: "Medium",          price: 200, spice: 2 },
-  { name: "Spicy Honey BBQ", price: 200, spice: 2 },
-  { name: "Spicy Teriyaki",  price: 200, spice: 2 },
-  { name: "Hot",             price: 200, spice: 3 },
-  { name: "Mango Habanero",  price: 200, spice: 4 },
+// Dipping sauces — linked to Clover modifier group "Dipping Sauces for Wings/Fingers" (3WE2WHQ5SQY8P)
+// spice: 0=none, 1=mild, 2=medium, 3=hot, 4=very hot
+const SAUCES: { name: string; spice: number; cloverId: string }[] = [
+  { name: "Plain",           spice: 0, cloverId: "MTHVNJX136BXG" },
+  { name: "Ranch",           spice: 0, cloverId: "BJWFM7GGGVJD2" },
+  { name: "Blue Cheese",     spice: 0, cloverId: "Z17GXBK8RB6SY" },
+  { name: "BBQ",             spice: 0, cloverId: "NJWPT0MAVDTVW" },
+  { name: "Teriyaki",        spice: 0, cloverId: "BRW5VSQA0ZZE8" },
+  { name: "Lemon Pepper",    spice: 0, cloverId: "2WMGASNM6V2CC" },
+  { name: "Lemon Garlic",    spice: 0, cloverId: "BWCFJJ9Y6EMH2" },
+  { name: "Garlic Parmesan", spice: 0, cloverId: "3E6E10HCXZ64T" },
+  { name: "Mild",            spice: 1, cloverId: "YQ5VKDS8CEATY" },
+  { name: "Medium",          spice: 2, cloverId: "HWZK8DK28WEVE" },
+  { name: "Spicy Honey BBQ", spice: 2, cloverId: "DDTT151V7A9MA" },
+  { name: "Spicy Teriyaki",  spice: 2, cloverId: "Z51Z7805M8YST" },
+  { name: "Hot",             spice: 3, cloverId: "DTNC7H5NQTDN8" },
+  { name: "Half And Half",   spice: 1, cloverId: "JS7RCSCRYD1M6" },
+  { name: "Mango Habanero",  spice: 4, cloverId: "PQ3G7HJ2J77C2" },
+];
+
+// Extra sauces — linked to Clover modifier group "Extra Sauce on the Side for Wings/Fingers" (Z7FD09SCCEWH6)
+const EXTRA_SAUCES: { name: string; price: number; spice: number; cloverId: string }[] = [
+  { name: "BBQ",             price: 200, spice: 0, cloverId: "T66C9VZMZRJHW" },
+  { name: "Blue Cheese",     price: 200, spice: 0, cloverId: "27RHZYRWZ49CR" },
+  { name: "Garlic Parmesan", price: 200, spice: 0, cloverId: "4Y32RAY2QDX8Y" },
+  { name: "Teriyaki",        price: 200, spice: 0, cloverId: "8HZPX8QPYZ5CA" },
+  { name: "Lemon Pepper",    price: 200, spice: 0, cloverId: "0DA3DEKT4ARBW" },
+  { name: "Lemon Garlic",    price: 200, spice: 0, cloverId: "5TJWDQEDFZW14" },
+  { name: "Ranch 2oz",       price: 100, spice: 0, cloverId: "2PY3FW9ZBNYNP" },
+  { name: "Ranch 4oz",       price: 200, spice: 0, cloverId: "K3Q8MCSA2VCVA" },
+  { name: "Mild",            price: 200, spice: 1, cloverId: "HFK3FY4M9FS5R" },
+  { name: "Medium",          price: 200, spice: 2, cloverId: "5TAYP99VVPPEG" },
+  { name: "Spicy Honey BBQ", price: 200, spice: 2, cloverId: "X67AM28PMEVST" },
+  { name: "Spicy Teriyaki",  price: 200, spice: 2, cloverId: "T76V0YMRFFC4Y" },
+  { name: "Hot",             price: 200, spice: 3, cloverId: "GYJ97CTC0PZ3P" },
+  { name: "Mango Habanero",  price: 200, spice: 4, cloverId: "5S9TYNVEWC98J" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -174,11 +180,11 @@ function StepCookingStyle({
       </p>
       <div className="grid grid-cols-2 gap-3">
         {COOKING_STYLES.map((style) => {
-          const isSelected = selected === style;
+          const isSelected = selected === style.name;
           return (
             <button
-              key={style}
-              onClick={() => onSelect(style)}
+              key={style.name}
+              onClick={() => onSelect(style.name)}
               className="rounded-xl p-4 text-left transition-all duration-200 active:scale-95 relative"
               style={{
                 background: isSelected
@@ -196,12 +202,12 @@ function StepCookingStyle({
                   <Check className="w-3 h-3 text-black" />
                 </span>
               )}
-              <div className="font-bold text-base">{style}</div>
+              <div className="font-bold text-base">{style.name}</div>
               <div className="text-xs mt-1 opacity-60">
-                {style === "Regular" && "Classic fried wings"}
-                {style === "Extra Crispy" && "Extra crunchy skin"}
-                {style === "Well Done" && "Fully cooked through"}
-                {style === "Plain" && "No seasoning"}
+                {style.name === "Regular" && "Classic fried wings"}
+                {style.name === "Extra Crispy" && "Extra crunchy skin"}
+                {style.name === "Well Done" && "Fully cooked through"}
+                {style.name === "Plain" && "No seasoning"}
               </div>
             </button>
           );
@@ -547,36 +553,61 @@ export default function WingsWizard({ onClose }: WingsWizardProps) {
     );
   }
 
-  function buildModifiersNote(): string {
-    const parts: string[] = [];
-    if (cookingStyle && cookingStyle !== "Regular") parts.push(`Style: ${cookingStyle}`);
+    function buildCartModifiers(): Array<{ name: string; priceCents: number; cloverId?: string }> {
+    const mods: Array<{ name: string; priceCents: number; cloverId?: string }> = [];
+
+    // Cooking style (skip Regular — it's the default, no need to show on receipt)
+    if (cookingStyle && cookingStyle !== "Regular") {
+      const styleObj = COOKING_STYLES.find((s) => s.name === cookingStyle);
+      mods.push({ name: cookingStyle, priceCents: 0, cloverId: styleObj?.cloverId });
+    }
+
+    // Flavor(s)
     if (halfHalf) {
-      parts.push(`Flavor: Half ${halfFlavor1} / Half ${halfFlavor2}`);
+      // Half & Half — use the Half And Half modifier + two flavor modifiers
+      const halfMod = SAUCES.find((s) => s.name === "Half And Half");
+      mods.push({ name: "Half And Half", priceCents: 0, cloverId: halfMod?.cloverId });
+      if (halfFlavor1) {
+        const f1 = SAUCES.find((s) => s.name === halfFlavor1);
+        mods.push({ name: `1st Half: ${halfFlavor1}`, priceCents: 0, cloverId: f1?.cloverId });
+      }
+      if (halfFlavor2) {
+        const f2 = SAUCES.find((s) => s.name === halfFlavor2);
+        mods.push({ name: `2nd Half: ${halfFlavor2}`, priceCents: 0, cloverId: f2?.cloverId });
+      }
     } else if (flavor) {
-      parts.push(`Flavor: ${flavor}`);
+      const flavorObj = SAUCES.find((s) => s.name === flavor);
+      mods.push({ name: flavor, priceCents: 0, cloverId: flavorObj?.cloverId });
     }
-    if (dippingSauces.length > 0) {
-      parts.push(`Dipping: ${dippingSauces.join(", ")}`);
+
+    // Included dipping sauces (free)
+    for (const sauceName of dippingSauces) {
+      const sauceObj = SAUCES.find((s) => s.name === sauceName);
+      mods.push({ name: `Dipping: ${sauceName}`, priceCents: 0, cloverId: sauceObj?.cloverId });
     }
-    if (extraSauces.length > 0) {
-      parts.push(`Extra sauces: ${extraSauces.join(", ")}`);
+
+    // Extra sauces (paid)
+    for (const sauceName of extraSauces) {
+      const sauceObj = EXTRA_SAUCES.find((s) => s.name === sauceName);
+      mods.push({
+        name: `Extra: ${sauceName}`,
+        priceCents: sauceObj?.price ?? 200,
+        cloverId: sauceObj?.cloverId,
+      });
     }
-    return parts.join(" | ");
+
+    return mods;
   }
 
   function handleAddToCart() {
     if (!selectedOption) return;
-    const note = buildModifiersNote();
-    const flavorLabel = halfHalf
-      ? `Half ${halfFlavor1} / Half ${halfFlavor2}`
-      : flavor ?? "";
-
+    const modifiers = buildCartModifiers();
     addItem({
       itemCloverId: selectedOption.cloverId,
       itemName: `${selectedOption.qty} Wings`,
       unitPriceCents: totalPrice,
       quantity: 1,
-      modifiers: note ? [{ name: note, priceCents: 0 }] : [],
+      modifiers,
     });
     onClose();
     openCart();

@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useReducer, useState, useCallback
 export interface CartModifier {
   name: string;
   priceCents: number;
+  /** Real Clover modifier ID — links to catalog modifier on receipts/tickets */
+  cloverId?: string;
 }
 
 export interface CartItem {
